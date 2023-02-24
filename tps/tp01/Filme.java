@@ -1,4 +1,6 @@
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Objects;
@@ -158,6 +160,21 @@ public class Filme {
         dos.writeUTF(description);
 
         return baos.toByteArray();
+    }
+
+    public void fromByteArray(byte ba[]) throws IOException {
+
+        ByteArrayInputStream bais = new ByteArrayInputStream(ba);
+        DataInputStream dis = new DataInputStream(bais);
+
+        id = dis.readInt();
+        title = dis.readUTF();
+        type = dis.readUTF();
+        director = dis.readUTF();
+        country = dis.readUTF();
+        releaseYear = dis.readInt();
+        description = dis.readUTF();
+
     }
 
 }

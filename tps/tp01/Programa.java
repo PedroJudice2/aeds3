@@ -1,4 +1,5 @@
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -47,7 +48,7 @@ class Programa {
         Long pos = filePointer;
         byte[] ba;
         if (pos == 0) {
-            arq.writeInt(0);
+            arq.writeInt(1);
             arq.writeBoolean(false);
             ba = filme.toByteArray();
             arq.writeInt(ba.length);
@@ -56,6 +57,7 @@ class Programa {
             arq.seek(0);
             int id = arq.readInt();
             id++;
+            arq.seek(0);
             arq.writeInt(id);
             arq.seek(pos);
             arq.writeBoolean(false);
@@ -70,7 +72,36 @@ class Programa {
         return pos;
     }
 
+    public static void ler() throws IOException {
+        RandomAccessFile arq = new RandomAccessFile("/mnt/d/Documentos/Escola/aeds3/tps/tp01/dados/filmes.db",
+                "rw");
+        arq.seek(0);
+        System.out.println("Numero de filmes: " + arq.readInt());
+        System.out.println();
+
+        long currentPosition = arq.getFilePointer();
+        long endPosition = arq.length();
+        int len;
+        byte[] ba;
+        Filme filme = new Filme();
+        while (currentPosition < endPosition) {
+            arq.seek(arq.getFilePointer() + 1);
+            len = arq.readInt();
+            ba = new byte[len];
+            arq.read(ba);
+            filme.fromByteArray(ba);
+            System.out.println(filme);
+            System.out.println();
+            currentPosition = arq.getFilePointer();
+        }
+    }
+
     public static void main(String[] args) {
-        Carregar();
+        // Carregar();
+        try {
+            ler();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
