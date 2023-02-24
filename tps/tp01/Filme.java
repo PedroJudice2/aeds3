@@ -150,6 +150,7 @@ public class Filme {
         DataOutputStream dos = new DataOutputStream(baos);
 
         dos.writeInt(id);
+        dos.writeUTF(title);
         dos.writeUTF(type);
         dos.writeUTF(director);
         dos.writeUTF(country);
