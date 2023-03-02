@@ -16,7 +16,7 @@ public class Filme {
     private String description;
 
     public Filme() {
-        size = 0;
+        size = 1;
     }
 
     public Filme(String title, String type, String director, String country, int releaseYear, String description) {
@@ -35,6 +35,10 @@ public class Filme {
 
     public void setId() {
         this.id = size++;
+    }
+
+    public void setIdManual(int id) {
+        this.id = id;
     }
 
     public String getTitle() {
