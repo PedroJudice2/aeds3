@@ -5,8 +5,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Objects;
 
-public class Filme { // atributos do filme
-    private static int size; // memória para gravar qual id que o filme ta, class filme
+public class Filme {
+    private static int size;
     private int id;
     private String title;
     private String type;
@@ -35,6 +35,10 @@ public class Filme { // atributos do filme
 
     public void setId() {
         this.id = size++;
+    }
+
+    public void setIdManual(int id) {
+        this.id = id;
     }
 
     public String getTitle() {
@@ -134,7 +138,7 @@ public class Filme { // atributos do filme
     }
 
     @Override
-    public String toString() { // objeto em uma string
+    public String toString() {
         return "{" +
                 " id='" + getId() + "'" +
                 ", title='" + getTitle() + "'" +
@@ -146,12 +150,12 @@ public class Filme { // atributos do filme
                 "}";
     }
 
-    public byte[] toByteArray() throws IOException { // Grava os bytes no arquivo, pegando cada atributo
+    public byte[] toByteArray() throws IOException {
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(baos);
 
-        dos.writeInt(id); // ler o byte e transformar em um int
+        dos.writeInt(id);
         dos.writeUTF(title);
         dos.writeUTF(type);
         dos.writeUTF(director);
@@ -162,7 +166,7 @@ public class Filme { // atributos do filme
         return baos.toByteArray();
     }
 
-    public void fromByteArray(byte ba[]) throws IOException { // Pega os bytes do arquivo e transforma no atributo
+    public void fromByteArray(byte ba[]) throws IOException {
 
         ByteArrayInputStream bais = new ByteArrayInputStream(ba);
         DataInputStream dis = new DataInputStream(bais);
