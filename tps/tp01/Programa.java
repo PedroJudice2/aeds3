@@ -13,7 +13,7 @@ class Programa {
         String choice;
         try {
             System.out.println("Carregando...");
-            //Carregar();
+            Carregar();
             // lerTodos();
             do {
                 System.out.print("\033[H\033[2J");
@@ -22,7 +22,7 @@ class Programa {
                 System.out.println("pesquisar op 2 ");
                 System.out.println("Atualizar op 3 ");
                 System.out.println("Adicionar op 4 ");
-                //System.out.println(getIntCabecalho());
+                System.out.println(getIntCabecalho());
 
                 int op;
 
@@ -74,7 +74,9 @@ class Programa {
                 // Opção para adicionar
                 } else if (op == 4) {
                     sc.nextLine();
-                    System.out.println(getFilmeInclude());
+                    Filme filme = getFilmeInclude();
+                    System.out.println(filme);
+                    chargeFilmeNovo(filme);
                 }
                 System.out.println();
                 System.out.println("Deseja fazer alguma outra operação?");
@@ -91,7 +93,7 @@ class Programa {
 
     public static void Carregar() {
         try (BufferedReader br = new BufferedReader(
-                new FileReader("/mnt/c/Users/pedro/OneDrive/Área de Trabalho/AEDS3/Base de Dados/NetFlix.csv"))) {
+                new FileReader("/mnt/c/Users/User/Documents/Pedro/aeds3/Base de Dados/NetFlix.csv"))) {
             Filme filme = new Filme();
             br.readLine();
             String line = br.readLine();
@@ -125,7 +127,7 @@ class Programa {
     }
 
     public static long escrever(Filme filme, Long filePointer, int type) throws IOException {
-        RandomAccessFile arq = new RandomAccessFile("/mnt/c/Users/pedro/OneDrive/Área de Trabalho/AEDS3/tps/tp01/dados/filmes.db",
+        RandomAccessFile arq = new RandomAccessFile("/mnt/c/Users/User/Documents/Pedro/aeds3/tps/tp01/dados/filmes.db",
                 "rw");
 
         Long pos = filePointer;
@@ -141,6 +143,17 @@ class Programa {
             arq.writeBoolean(false);
             ba = filme.toByteArray();
             arq.writeInt(ba.length);
+            arq.write(ba);
+        } else if (type == 2) {
+            arq.seek(0);
+            int id = arq.readInt();
+            id++;
+            arq.seek(0);
+            arq.writeInt(id);
+            arq.seek(pos);
+            arq.writeBoolean(false);
+            ba = filme.toByteArray();
+            arq.readInt();
             arq.write(ba);
         } else {
             arq.seek(0);
@@ -162,7 +175,7 @@ class Programa {
     }
 
     public static void lerTodos() throws IOException {
-        RandomAccessFile arq = new RandomAccessFile("/mnt/c/Users/pedro/OneDrive/Área de Trabalho/AEDS3/tps/tp01/dados/filmes.db",
+        RandomAccessFile arq = new RandomAccessFile("/mnt/c/Users/User/Documents/Pedro/aeds3/tps/tp01/dados/filmes.db",
                 "rw");
         arq.seek(0);
         System.out.println("Numero de filmes: " + arq.readInt());
@@ -188,7 +201,7 @@ class Programa {
     }
 
     public static Filme lerId(int id) throws IOException {
-        RandomAccessFile arq = new RandomAccessFile("/mnt/c/Users/pedro/OneDrive/Área de Trabalho/AEDS3/tps/tp01/dados/filmes.db",
+        RandomAccessFile arq = new RandomAccessFile("/mnt/c/Users/User/Documents/Pedro/aeds3/tps/tp01/dados/filmes.db",
                 "rw");
         if (id > arq.readInt()) {
             arq.close();
@@ -210,7 +223,7 @@ class Programa {
                 len = arq.readInt();
                 ba = new byte[len];
                 arq.read(ba);
-                filme.fromByteArray(ba);
+                    filme.fromByteArray(ba);
                 if (filme.getId() == id) {
                     currentPosition = endPosition;
                     achou = true;
@@ -228,7 +241,7 @@ class Programa {
     }
 
     public static boolean delete(int id) throws IOException {
-        RandomAccessFile arq = new RandomAccessFile("/mnt/c/Users/pedro/OneDrive/Área de Trabalho/AEDS3/tps/tp01/dados/filmes.db",
+        RandomAccessFile arq = new RandomAccessFile("/mnt/c/Users/User/Documents/Pedro/aeds3/tps/tp01/dados/filmes.db",
                 "rw");
         if (id > arq.readInt()) {
             arq.close();
@@ -268,7 +281,7 @@ class Programa {
     }
 
     public static boolean update(Filme novoFilme) throws IOException {
-        RandomAccessFile arq = new RandomAccessFile("/mnt/c/Users/pedro/OneDrive/Área de Trabalho/AEDS3/tps/tp01/dados/filmes.db",
+        RandomAccessFile arq = new RandomAccessFile("/mnt/c/Users/User/Documents/Pedro/aeds3/tps/tp01/dados/filmes.db",
                 "rw");
         if (novoFilme.getId() > arq.readInt()) {
             arq.close();
@@ -407,11 +420,11 @@ class Programa {
     }
 
     public static Filme getFilmeInclude() throws IOException {
-        RandomAccessFile arq = new RandomAccessFile("/mnt/c/Users/pedro/OneDrive/Área de Trabalho/AEDS3/tps/tp01/dados/filmes.db",
+        RandomAccessFile arq = new RandomAccessFile("/mnt/c/Users/User/Documents/Pedro/aeds3/tps/tp01/dados/filmes.db",
                 "rw");
 
         Filme filme = new Filme();
-        filme.setIdManual(arq.readInt());
+        filme.setIdManual(arq.readInt() + 1);
         arq.close();
         int ano;
         String text;
@@ -511,7 +524,7 @@ class Programa {
 
     
     public static void chargeFilmeNovo(Filme filme) throws IOException{
-        RandomAccessFile arq = new RandomAccessFile("/mnt/c/Users/pedro/OneDrive/Área de Trabalho/AEDS3/tps/tp01/dados/filmes.db",
+        RandomAccessFile arq = new RandomAccessFile("/mnt/c/Users/User/Documents/Pedro/aeds3/tps/tp01/dados/filmes.db",
                 "rw");
                 arq.readInt();
             long currentPosition = arq.getFilePointer();
@@ -525,22 +538,15 @@ class Programa {
                 if(lapide == true){
                     int tamanho = arq.readInt();
                     ba = filme.toByteArray(); 
-                    if(ba.length == tamanho){
+                    if(ba.length <= tamanho){
                         
-                        //escrever(filme, cursor, 0) se quiser usar o escrever, comenta o resto
-                        arq.seek(0);
-                        int cabecalho = arq.readInt();
-                        cabecalho++;
-                        arq.seek(0);
-                        arq.writeInt(cabecalho);
-                        arq.seek(cursor); //Ponteiro localizado antes da lápide
-                        arq.writeBoolean(false); //Torna o arquivo vivo de novo
-                        arq.readInt(); // Pula o tamanho (length)
-                        arq.write(ba);
+                        escrever(filme, cursor, 2);
                         achou = true;
                         currentPosition = endPosition; //Break;
-
                     }
+                }else {
+                    int len = arq.readInt();
+                    currentPosition = cursor + len + 5; 
                 }
             }
             if(achou == false){
@@ -551,7 +557,7 @@ class Programa {
     }
 
     public static int getIntCabecalho() throws IOException {
-        RandomAccessFile arq = new RandomAccessFile("/mnt/c/Users/pedro/OneDrive/Área de Trabalho/AEDS3/tps/tp01/dados/filmes.db",
+        RandomAccessFile arq = new RandomAccessFile("/mnt/c/Users/User/Documents/Pedro/aeds3/tps/tp01/dados/filmes.db",
                 "rw");
                 int valor = arq.readInt();
                 arq.close();

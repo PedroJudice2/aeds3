@@ -3,17 +3,29 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 public class Filme {
     private static int size;
     private int id;
+
     private String title;
+    private int titleLen;
+
     private String type;
+    private int typeLen;
+
     private String director;
+    private int directorLen;
+
     private String country;
+    private int countryLen;
+
     private int releaseYear;
+
     private String description;
+    private int descriptionLen;
 
     public Filme() {
         size = 1;
@@ -21,12 +33,23 @@ public class Filme {
 
     public Filme(String title, String type, String director, String country, int releaseYear, String description) {
         this.id = size++;
+
         this.title = title;
+        titleLen = title.getBytes(StandardCharsets.UTF_8).length;
+
         this.type = type;
+        typeLen = type.getBytes(StandardCharsets.UTF_8).length;
+        
         this.director = director;
+        directorLen = director.getBytes(StandardCharsets.UTF_8).length;
+
         this.country = country;
+        countryLen = country.getBytes(StandardCharsets.UTF_8).length;
+
         this.releaseYear = releaseYear;
+
         this.description = description;
+        descriptionLen = description.getBytes(StandardCharsets.UTF_8).length;
     }
 
     public int getId() {
@@ -47,6 +70,7 @@ public class Filme {
 
     public void setTitle(String title) {
         this.title = title;
+        titleLen = title.getBytes(StandardCharsets.UTF_8).length;
     }
 
     public String getType() {
@@ -55,6 +79,7 @@ public class Filme {
 
     public void setType(String type) {
         this.type = type;
+        typeLen = type.getBytes(StandardCharsets.UTF_8).length;
     }
 
     public String getDirector() {
@@ -155,13 +180,36 @@ public class Filme {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(baos);
 
+        // escrever Id
         dos.writeInt(id);
-        dos.writeUTF(title);
-        dos.writeUTF(type);
-        dos.writeUTF(director);
-        dos.writeUTF(country);
+
+        // escrever titulo
+        byte[] ba = title.getBytes(StandardCharsets.UTF_8);
+        dos.writeInt(ba.length);
+        dos.write(ba);
+
+        // escrever tipo
+        ba = type.getBytes(StandardCharsets.UTF_8);
+        dos.writeInt(ba.length);
+        dos.write(ba);
+
+        // escrever diretor
+        ba = director.getBytes(StandardCharsets.UTF_8);
+        dos.writeInt(ba.length);
+        dos.write(ba);
+
+        // escrever pais
+        ba = country.getBytes(StandardCharsets.UTF_8);
+        dos.writeInt(ba.length);
+        dos.write(ba);
+
+        //escrever ano de lançamento
         dos.writeInt(releaseYear);
-        dos.writeUTF(description);
+
+        //escrever descrição
+        ba = description.getBytes(StandardCharsets.UTF_8);
+        dos.writeInt(ba.length);
+        dos.write(ba);
 
         return baos.toByteArray();
     }
@@ -172,12 +220,17 @@ public class Filme {
         DataInputStream dis = new DataInputStream(bais);
 
         id = dis.readInt();
-        title = dis.readUTF();
-        type = dis.readUTF();
-        director = dis.readUTF();
-        country = dis.readUTF();
+        int len = dis.readInt();
+        title = new String(dis.readNBytes(len), StandardCharsets.UTF_8);
+        len = dis.readInt();
+        type = new String(dis.readNBytes(len), StandardCharsets.UTF_8);
+        len = dis.readInt();
+        director = new String(dis.readNBytes(len), StandardCharsets.UTF_8);
+        len = dis.readInt();
+        country = new String(dis.readNBytes(len), StandardCharsets.UTF_8);
         releaseYear = dis.readInt();
-        description = dis.readUTF();
+        len = dis.readInt();
+        description = new String(dis.readNBytes(len), StandardCharsets.UTF_8);
 
     }
 
