@@ -7,13 +7,17 @@ import java.util.regex.Pattern;
 
 class Programa {
 
+    // COLOQUE O CAMINHO DA DO SEU CSV E DO SEU AQUIVO
+    public static String csvPath = "/mnt/d/Documentos/Escola/aeds3/Base de Dados/NetFlix.csv";
+    public static String dbPath = "/mnt/d/Documentos/Escola/aeds3/tps/tp01/dados/filmes.db";
+
     public static Scanner sc = new Scanner(System.in);
 
     public static void main(String[] args) {
         String choice;
         try {
             System.out.println("Carregando...");
-            Carregar();
+            // Carregar();
             // lerTodos();
             do {
                 System.out.print("\033[H\033[2J");
@@ -26,13 +30,13 @@ class Programa {
 
                 int op;
 
-                //limitar as opções 1 a 4
-                do { 
+                // limitar as opções 1 a 4
+                do {
                     System.out.print("Digite a opção desejada: ");
                     op = sc.nextInt();
                 } while (op != 1 && op != 2 && op != 3 && op != 4);
-            
-                //Opção para exclusão
+
+                // Opção para exclusão
                 if (op == 1) {
                     System.out.print("Digite o id desejado: ");
                     int idBusca = sc.nextInt();
@@ -44,7 +48,7 @@ class Programa {
                         System.out.println("Id não encontrado!");
                     }
 
-                //Opção para busca
+                    // Opção para busca
                 } else if (op == 2) {
                     System.out.print("Digite o id desejado: ");
                     int idBusca = sc.nextInt();
@@ -57,7 +61,7 @@ class Programa {
                         System.out.println("Id não encontrado!");
                     }
 
-                //Opção para atualizar
+                    // Opção para atualizar
                 } else if (op == 3) {
                     System.out.print("Digite o id desejado: ");
                     int idBusca = sc.nextInt();
@@ -71,7 +75,7 @@ class Programa {
                         System.out.println("Id não encontrado!");
                     }
 
-                // Opção para adicionar
+                    // Opção para adicionar
                 } else if (op == 4) {
                     sc.nextLine();
                     Filme filme = getFilmeInclude();
@@ -93,7 +97,7 @@ class Programa {
 
     public static void Carregar() {
         try (BufferedReader br = new BufferedReader(
-                new FileReader("/mnt/c/Users/User/Documents/Pedro/aeds3/Base de Dados/NetFlix.csv"))) {
+                new FileReader(csvPath))) {
             Filme filme = new Filme();
             br.readLine();
             String line = br.readLine();
@@ -127,7 +131,7 @@ class Programa {
     }
 
     public static long escrever(Filme filme, Long filePointer, int type) throws IOException {
-        RandomAccessFile arq = new RandomAccessFile("/mnt/c/Users/User/Documents/Pedro/aeds3/tps/tp01/dados/filmes.db",
+        RandomAccessFile arq = new RandomAccessFile("/mnt/d/Documentos/Escola/aeds3/tps/tp01/dados/filmes.db",
                 "rw");
 
         Long pos = filePointer;
@@ -175,7 +179,7 @@ class Programa {
     }
 
     public static void lerTodos() throws IOException {
-        RandomAccessFile arq = new RandomAccessFile("/mnt/c/Users/User/Documents/Pedro/aeds3/tps/tp01/dados/filmes.db",
+        RandomAccessFile arq = new RandomAccessFile(dbPath,
                 "rw");
         arq.seek(0);
         System.out.println("Numero de filmes: " + arq.readInt());
@@ -201,7 +205,7 @@ class Programa {
     }
 
     public static Filme lerId(int id) throws IOException {
-        RandomAccessFile arq = new RandomAccessFile("/mnt/c/Users/User/Documents/Pedro/aeds3/tps/tp01/dados/filmes.db",
+        RandomAccessFile arq = new RandomAccessFile(dbPath,
                 "rw");
         if (id > arq.readInt()) {
             arq.close();
@@ -223,7 +227,7 @@ class Programa {
                 len = arq.readInt();
                 ba = new byte[len];
                 arq.read(ba);
-                    filme.fromByteArray(ba);
+                filme.fromByteArray(ba);
                 if (filme.getId() == id) {
                     currentPosition = endPosition;
                     achou = true;
@@ -241,7 +245,7 @@ class Programa {
     }
 
     public static boolean delete(int id) throws IOException {
-        RandomAccessFile arq = new RandomAccessFile("/mnt/c/Users/User/Documents/Pedro/aeds3/tps/tp01/dados/filmes.db",
+        RandomAccessFile arq = new RandomAccessFile(dbPath,
                 "rw");
         if (id > arq.readInt()) {
             arq.close();
@@ -281,7 +285,7 @@ class Programa {
     }
 
     public static boolean update(Filme novoFilme) throws IOException {
-        RandomAccessFile arq = new RandomAccessFile("/mnt/c/Users/User/Documents/Pedro/aeds3/tps/tp01/dados/filmes.db",
+        RandomAccessFile arq = new RandomAccessFile(dbPath,
                 "rw");
         if (novoFilme.getId() > arq.readInt()) {
             arq.close();
@@ -378,7 +382,7 @@ class Programa {
     }
 
     public static Filme getFilmeUpdate(int id) {
-        
+
         Filme filme = new Filme();
         filme.setIdManual(id);
         int ano;
@@ -420,7 +424,7 @@ class Programa {
     }
 
     public static Filme getFilmeInclude() throws IOException {
-        RandomAccessFile arq = new RandomAccessFile("/mnt/c/Users/User/Documents/Pedro/aeds3/tps/tp01/dados/filmes.db",
+        RandomAccessFile arq = new RandomAccessFile(dbPath,
                 "rw");
 
         Filme filme = new Filme();
@@ -522,45 +526,43 @@ class Programa {
         return filme;
     }
 
-    
-    public static void chargeFilmeNovo(Filme filme) throws IOException{
-        RandomAccessFile arq = new RandomAccessFile("/mnt/c/Users/User/Documents/Pedro/aeds3/tps/tp01/dados/filmes.db",
+    public static void chargeFilmeNovo(Filme filme) throws IOException {
+        RandomAccessFile arq = new RandomAccessFile(dbPath,
                 "rw");
-                arq.readInt();
-            long currentPosition = arq.getFilePointer();
-            long endPosition = arq.length();
-            byte[] ba;
-            boolean achou = false;
+        arq.readInt();
+        long currentPosition = arq.getFilePointer();
+        long endPosition = arq.length();
+        byte[] ba;
+        boolean achou = false;
 
-            while(currentPosition < endPosition){
-                long cursor = arq.getFilePointer();
-                boolean lapide = arq.readBoolean();
-                if(lapide == true){
-                    int tamanho = arq.readInt();
-                    ba = filme.toByteArray(); 
-                    if(ba.length <= tamanho){
-                        
-                        escrever(filme, cursor, 2);
-                        achou = true;
-                        currentPosition = endPosition; //Break;
-                    }
-                }else {
-                    int len = arq.readInt();
-                    currentPosition = cursor + len + 5; 
+        while (currentPosition < endPosition) {
+            long cursor = arq.getFilePointer();
+            if (arq.readBoolean()) {
+                int tamanho = arq.readInt();
+                ba = filme.toByteArray();
+                if (ba.length <= tamanho) {
+                    escrever(filme, cursor, 2);
+                    achou = true;
+                    currentPosition = endPosition; // Break;
                 }
+            } else {
+                int len = arq.readInt();
+                arq.seek(len + (cursor + 5));
+                currentPosition = arq.getFilePointer();
             }
-            if(achou == false){
+        }
+        if (achou == false) {
             escrever(filme, arq.length(), 0); // ponteiro direcionado para ultima posição do arquivo
-            }
-            arq.close();
-            // TODO reordenar
+        }
+        arq.close();
+        // TODO reordenar
     }
 
     public static int getIntCabecalho() throws IOException {
-        RandomAccessFile arq = new RandomAccessFile("/mnt/c/Users/User/Documents/Pedro/aeds3/tps/tp01/dados/filmes.db",
+        RandomAccessFile arq = new RandomAccessFile(dbPath,
                 "rw");
-                int valor = arq.readInt();
-                arq.close();
-                return valor;
+        int valor = arq.readInt();
+        arq.close();
+        return valor;
     }
 }

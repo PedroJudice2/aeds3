@@ -9,23 +9,12 @@ import java.util.Objects;
 public class Filme {
     private static int size;
     private int id;
-
     private String title;
-    private int titleLen;
-
     private String type;
-    private int typeLen;
-
     private String director;
-    private int directorLen;
-
     private String country;
-    private int countryLen;
-
     private int releaseYear;
-
     private String description;
-    private int descriptionLen;
 
     public Filme() {
         size = 1;
@@ -33,23 +22,12 @@ public class Filme {
 
     public Filme(String title, String type, String director, String country, int releaseYear, String description) {
         this.id = size++;
-
         this.title = title;
-        titleLen = title.getBytes(StandardCharsets.UTF_8).length;
-
         this.type = type;
-        typeLen = type.getBytes(StandardCharsets.UTF_8).length;
-        
         this.director = director;
-        directorLen = director.getBytes(StandardCharsets.UTF_8).length;
-
         this.country = country;
-        countryLen = country.getBytes(StandardCharsets.UTF_8).length;
-
         this.releaseYear = releaseYear;
-
         this.description = description;
-        descriptionLen = description.getBytes(StandardCharsets.UTF_8).length;
     }
 
     public int getId() {
@@ -70,7 +48,6 @@ public class Filme {
 
     public void setTitle(String title) {
         this.title = title;
-        titleLen = title.getBytes(StandardCharsets.UTF_8).length;
     }
 
     public String getType() {
@@ -79,7 +56,6 @@ public class Filme {
 
     public void setType(String type) {
         this.type = type;
-        typeLen = type.getBytes(StandardCharsets.UTF_8).length;
     }
 
     public String getDirector() {
@@ -203,10 +179,10 @@ public class Filme {
         dos.writeInt(ba.length);
         dos.write(ba);
 
-        //escrever ano de lançamento
+        // escrever ano de lançamento
         dos.writeInt(releaseYear);
 
-        //escrever descrição
+        // escrever descrição
         ba = description.getBytes(StandardCharsets.UTF_8);
         dos.writeInt(ba.length);
         dos.write(ba);
