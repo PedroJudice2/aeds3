@@ -19,8 +19,12 @@ class Programa {
     public static void main(String[] args) {
         String choice;
         try {
-            System.out.println("Carregando...");
-            Carregar();
+            System.out.println("Gostaria de carregar a base? ");
+            String carrega = sc.nextLine();
+            if (Pattern.matches("^(?:1|t(?:rue)?|y(?:es)?|ok(?:ay)?|s(?:im)?)$", carrega)) {
+                System.out.println("Carregando...");
+                Carregar();
+            }
             // lerTodos();
             do {
                 System.out.print("\033[H\033[2J");
@@ -833,12 +837,15 @@ class Programa {
         // exlcuir fitas
         for (int i = 0; i < (caminhos * 2); i++) {
             raf[i].close();
-            fita[i].delete();
+            fita[i].deleteOnExit();
         }
     }
 
     public static void fileClone(RandomAccessFile a, RandomAccessFile b) throws IOException {
-        a.seek(4);
+        a.seek(0);
+        int cabecalho = a.readInt();
+        a.setLength(0);
+        a.writeInt(cabecalho);
         b.seek(0);
 
         byte[] buffer = new byte[1024];
@@ -846,6 +853,7 @@ class Programa {
         while ((bytesRead = b.read(buffer)) != -1) {
             a.write(buffer, 0, bytesRead);
         }
+
     }
 
     public static void testeIntercala() throws IOException {
