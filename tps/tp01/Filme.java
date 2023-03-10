@@ -8,6 +8,7 @@ import java.util.Objects;
 
 public class Filme {
     private static int size;
+    private boolean lapide;
     private int id;
     private String title;
     private String type;
@@ -88,6 +89,14 @@ public class Filme {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public boolean getLapide() {
+        return this.lapide;
+    }
+
+    public void setLapide(boolean lapide) {
+        this.lapide = lapide;
     }
 
     public Filme title(String title) {
@@ -195,16 +204,29 @@ public class Filme {
         ByteArrayInputStream bais = new ByteArrayInputStream(ba);
         DataInputStream dis = new DataInputStream(bais);
 
+        // ler id
         id = dis.readInt();
+
+        // ler titulo
         int len = dis.readInt();
         title = new String(dis.readNBytes(len), StandardCharsets.UTF_8);
+
+        // ler tipo
         len = dis.readInt();
         type = new String(dis.readNBytes(len), StandardCharsets.UTF_8);
+
+        // ler diretor
         len = dis.readInt();
         director = new String(dis.readNBytes(len), StandardCharsets.UTF_8);
+
+        // ler pais
         len = dis.readInt();
         country = new String(dis.readNBytes(len), StandardCharsets.UTF_8);
+
+        // ler ano de lançamento
         releaseYear = dis.readInt();
+
+        // ler descrição
         len = dis.readInt();
         description = new String(dis.readNBytes(len), StandardCharsets.UTF_8);
 
