@@ -11,7 +11,7 @@ class Programa {
 
     // COLOQUE O CAMINHO DA DO SEU CSV E DO SEU AQUIVO
     public static String csvPath = "/mnt/c/Users/User/Documents/Pedro/Base de Dados/Pasta1.csv";
-    public static String dbPath = "/mnt/c/Users/User/Documents/Pedro/tps/tp01/dados/filmes.db";
+    public static String dbPath = "/mnt/c/Users/User/Documents/Pedro/tps/tp01/casos teste/teste1.db";
 
     public static Scanner sc = new Scanner(System.in);
 
@@ -20,6 +20,7 @@ class Programa {
         try {
             System.out.println("Gostaria de carregar a base? ");
             String carrega = sc.nextLine();
+            carrega = carrega.toLowerCase();
             if (Pattern.matches("^(?:1|t(?:rue)?|y(?:es)?|ok(?:ay)?|s(?:im)?)$", carrega)) {
                 System.out.println("Carregando...");
                 Carregar();
@@ -339,6 +340,31 @@ class Programa {
         } else {
             return null;
         }
+    }
+
+    public static int filmeCount(RandomAccessFile arq) throws IOException {
+        int count = 0;
+        arq.seek(0);
+        arq.readInt();
+        long currentPosition = arq.getFilePointer();
+        long endPosition = arq.length();
+        int len;
+        while (currentPosition < endPosition) {
+            if ((arq.readBoolean())) {
+                len = arq.readInt();
+                long temp = arq.getFilePointer();
+                arq.seek(temp + len);
+                currentPosition = arq.getFilePointer();
+            } else {
+                len = arq.readInt();
+                long temp = arq.getFilePointer();
+                arq.seek(temp + len);
+                currentPosition = arq.getFilePointer();
+                count++;
+            }
+        }
+        arq.seek(0);
+        return count;
     }
 
     public static boolean delete(int id) throws IOException {
@@ -665,9 +691,9 @@ class Programa {
     }
 
     public static void intercalaVariosCaminho(RandomAccessFile arq, int caminhos) throws IOException {
-        arq.seek(0);
+        int nFilmes = filmeCount(arq);
+        int ultimoId = arq.readInt();
         // testar se caminho é valido
-        int nFilmes = arq.readInt();
         if (caminhos > nFilmes || caminhos < 2) {
             throw new IOException("caminho invalido");
         }
@@ -692,6 +718,8 @@ class Programa {
         int len;
         byte[] ba;
         int blocos = 2;
+        ArrayList<Integer> array1 = new ArrayList<Integer>();
+        ArrayList<Integer> array2 = new ArrayList<Integer>();
         for (int i = 0; currentPosition < endPosition; i++) {
             ArrayList<Filme> filmes = new ArrayList<Filme>();
 
@@ -719,20 +747,32 @@ class Programa {
                 } else {
                     fitaCursor[i % caminhos] = escrever(filmes.get(j), fitaCursor[i % caminhos], 1, raf[i % caminhos]);
                 }
+                if(i % caminhos == 0) {
+                    array1.add(filmes.get(j).getId());
+                }
+                else {
+                    array2.add(filmes.get(j).getId());
+                }
             }
 
         }
 
-        // intercalação
-        int passadas = (int) Math.ceil((Math.log(nFilmes / blocos) /
-                Math.log(caminhos)));
+        for (int a : array1) {
+            System.out.print(a + " ");
+        }
+        System.out.println();
+        for (int a : array2) {
+            System.out.print(a + " ");
+        }
 
-        for (int i = 1; i <= passadas; i++) {
+        // intercalação
+        boolean exit = true;
+        for (int i = 1; exit; i++) {
             // zerar o ponteiro de cada grupo de arquivo
             for (int j = 0; j < caminhos * 2; j++)
                 raf[j].seek(0);
             // quantidade de segmentos por passagem
-            int seg = blocos / i;
+            int seg = (int) Math.ceil((double) nFilmes/ (caminhos * blocos));
             int sizeSeg = blocos * i;
 
             int[] indexCaminho = new int[caminhos];
@@ -743,26 +783,23 @@ class Programa {
 
             // percorrer setor
             for (int j = 1; j <= seg; j++) {
-                if (j == 2) {
-                    System.out.println();
-                }
                 boolean flag = true;
                 int index;
+                ArrayList<Filme> filmes = new ArrayList<Filme>();
                 do {
 
                     // achar menor filme
                     Filme menor = new Filme();
-                    menor.setIdManual(nFilmes);
-                    RandomAccessFile champion = null;
+                    menor.setIdManual(ultimoId);
                     Long[] cursor = new Long[caminhos];
-                    for (int x = 0; x < caminhos; x++) {
-                        if (i % 2 != 0) {
+                    for (int x = 0; x < caminhos * sizeSeg; x++) {
+                        if (x % 2 == 0) {
                             index = x % caminhos;
                         } else {
                             index = (x % caminhos) + caminhos;
                         }
-                        if (indexCaminho[x] < j * sizeSeg && raf[index].getFilePointer() < raf[index].length()) {
 
+                        if (indexCaminho[x] < j * sizeSeg && raf[index].getFilePointer() < raf[index].length()) {
                             Filme temp = new Filme();
                             long teste = raf[index].getFilePointer();
                             cursor[x] = raf[index].getFilePointer();
@@ -771,30 +808,8 @@ class Programa {
                             ba = new byte[len];
                             raf[index].read(ba);
                             temp.fromByteArray(ba);
-                            if (temp.getId() <= menor.getId()) {
-                                menor = temp;
-                                champion = raf[index];
-                            }
-                        }
-                    }
-                    // andar com o ponteiro na fita com o menor numero
-                    for (int x = 0; x < caminhos; x++) {
-                        if (i % 2 != 0) {
-                            index = x % caminhos;
-                        } else {
-                            index = (x % caminhos) + caminhos;
-                        }
-                        long current = raf[index].getFilePointer();
-                        long end = raf[index].length();
-                        if (indexCaminho[x] < j * sizeSeg && current <= end && acabou[x] == false) {
-                            if (raf[index].equals(champion)) {
-                                if (current == end) {
-                                    acabou[x] = true;
-                                }
-                                indexCaminho[x]++;
-                            } else {
-                                raf[index].seek(cursor[x]);
-                            }
+                            filmes.add(temp);
+                            indexCaminho[x]++;
                         }
                     }
                     // escrever menor filme
@@ -804,8 +819,8 @@ class Programa {
                         index = (j - 1) % caminhos;
                     }
 
-                    if (menor.getId() <= nFilmes)
-                        escrever(menor, raf[index].getFilePointer(), 1, raf[index]);
+                    for (Filme filme : filmes)
+                        escrever(filme, raf[index].getFilePointer(), 1, raf[index]);
 
                     // checar se chegou no fim do segmento
                     for (int x = 0; x < caminhos; x++) {
@@ -827,6 +842,7 @@ class Programa {
             }
 
             if (seg == 1) {
+                exit = false;
                 if (i % 2 != 0) {
                     fileClone(arq, raf[((i) % caminhos) + caminhos]);
                 } else {
