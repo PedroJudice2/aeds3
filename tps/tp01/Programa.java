@@ -1,6 +1,5 @@
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -11,8 +10,8 @@ import java.util.regex.Pattern;
 class Programa {
 
     // COLOQUE O CAMINHO DA DO SEU CSV E DO SEU AQUIVO
-    public static String csvPath = "/mnt/d/Documentos/Escola/aeds3/Base de Dados/Pasta1.csv";
-    public static String dbPath = "/mnt/d/Documentos/Escola/aeds3/tps/tp01/dados/filmes.db";
+    public static String csvPath = "/mnt/c/Users/User/Documents/Pedro/Base de Dados/Pasta1.csv";
+    public static String dbPath = "/mnt/c/Users/User/Documents/Pedro/tps/tp01/dados/filmes.db";
 
     public static Scanner sc = new Scanner(System.in);
 
@@ -87,8 +86,8 @@ class Programa {
                 } else if (op == 4) {
                     sc.nextLine();
                     Filme filme = getFilmeInclude();
-                    System.out.println(filme);
                     chargeFilmeNovo(filme);
+                    System.out.println(filme);
                 } else if (op == 5) {
                     sc.nextLine();
                     testeIntercala();
@@ -109,9 +108,10 @@ class Programa {
         sc.close();
     }
 
-    public static void Carregar() throws FileNotFoundException {
-        RandomAccessFile arq = new RandomAccessFile("/mnt/d/Documentos/Escola/aeds3/tps/tp01/dados/filmes.db",
+    public static void Carregar() throws IOException {
+        RandomAccessFile arq = new RandomAccessFile(dbPath,
                 "rw");
+                arq.setLength(0);
         try (BufferedReader br = new BufferedReader(
                 new FileReader(csvPath))) {
             Filme filme = new Filme();
@@ -150,12 +150,14 @@ class Programa {
 
         Long pos = filePointer;
         byte[] ba;
-        if (pos == 0 && type != 1 && type != 3) {
+        //escrever primeiro filme
+        if (pos == 0 && type != 1 && type != 3 && type != 4) {
             arq.writeInt(1);
             arq.writeBoolean(false);
             ba = filme.toByteArray();
             arq.writeInt(ba.length);
             arq.write(ba);
+        // escrever filme sem alterar id cabeçalho 
         } else if (type == 1) {
             arq.seek(pos);
             arq.writeBoolean(false);
@@ -173,11 +175,18 @@ class Programa {
             ba = filme.toByteArray();
             arq.readInt();
             arq.write(ba);
+        // escrever filme sem alterar id cabeçalho e marcando-o como apagado
         } else if (type == 3) {
             arq.seek(pos);
             arq.writeBoolean(true);
             ba = filme.toByteArray();
             arq.writeInt(ba.length);
+            arq.write(ba);
+        } else if (type == 4) {
+            arq.seek(pos);
+            arq.writeBoolean(false);
+            ba = filme.toByteArray();
+            arq.readInt();
             arq.write(ba);
         } else {
             arq.seek(0);
@@ -387,7 +396,7 @@ class Programa {
         Boolean achou = false;
         Filme filme = new Filme();
         while (currentPosition < endPosition) {
-            long cursor = arq.getFilePointer();
+            long cursor = currentPosition;
             if (arq.readBoolean()) {
                 len = arq.readInt();
                 long temp = arq.getFilePointer();
@@ -456,7 +465,7 @@ class Programa {
                         currentPosition = endPosition;
                         achou = true;
                     } else {
-                        escrever(filme, cursor, 1, arq);
+                        escrever(filme, cursor, 4, arq);
                         currentPosition = endPosition;
                         achou = true;
                     }
@@ -625,6 +634,7 @@ class Programa {
 
         while (currentPosition < endPosition) {
             long cursor = arq.getFilePointer();
+
             if (arq.readBoolean()) {
                 int tamanho = arq.readInt();
                 ba = filme.toByteArray();
@@ -683,11 +693,11 @@ class Programa {
         byte[] ba;
         int blocos = 2;
         for (int i = 0; currentPosition < endPosition; i++) {
-            ArrayList<Filme> filme = new ArrayList<Filme>();
+            ArrayList<Filme> filmes = new ArrayList<Filme>();
 
             for (int j = 0; j < blocos && currentPosition < endPosition; j++) {
                 Filme filmetemp = new Filme();
-                arq.seek(arq.getFilePointer());
+                arq.seek(currentPosition);
                 if (arq.readBoolean()) {
                     filmetemp.setLapide(true);
                 } else {
@@ -697,17 +707,17 @@ class Programa {
                 ba = new byte[len];
                 arq.read(ba);
                 filmetemp.fromByteArray(ba);
-                filme.add(filmetemp);
+                filmes.add(filmetemp);
                 currentPosition = arq.getFilePointer();
             }
 
-            filmeSort(filme);
+            filmeSort(filmes);
 
-            for (int j = 0; j < filme.size(); j++) {
-                if (filme.get(j).getLapide()) {
-                    fitaCursor[i % caminhos] = escrever(filme.get(j), fitaCursor[i % caminhos], 3, raf[i % caminhos]);
+            for (int j = 0; j < filmes.size(); j++) {
+                if (filmes.get(j).getLapide()) {
+                    fitaCursor[i % caminhos] = escrever(filmes.get(j), fitaCursor[i % caminhos], 3, raf[i % caminhos]);
                 } else {
-                    fitaCursor[i % caminhos] = escrever(filme.get(j), fitaCursor[i % caminhos], 1, raf[i % caminhos]);
+                    fitaCursor[i % caminhos] = escrever(filmes.get(j), fitaCursor[i % caminhos], 1, raf[i % caminhos]);
                 }
             }
 
@@ -767,7 +777,7 @@ class Programa {
                             }
                         }
                     }
-                    // checar qual fita teve o menor numero
+                    // andar com o ponteiro na fita com o menor numero
                     for (int x = 0; x < caminhos; x++) {
                         if (i % 2 != 0) {
                             index = x % caminhos;
