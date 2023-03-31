@@ -10,8 +10,8 @@ import java.util.regex.Pattern;
 class Programa {
 
     // COLOQUE O CAMINHO DA DO SEU CSV E DO SEU AQUIVO
-    public static String csvPath = "/mnt/c/Users/otavi/Documents/pedro/PUC/aeds3/Base de Dados/NetFlix.csv";
-    public static String dbPath = "/mnt/c/Users/otavi/Documents/pedro/PUC/aeds3/tps/tp01/dados/filmes.db";
+    public static String csvPath = "/mnt/d/Documentos/Escola/aeds3/Base de Dados/NetFlix.csv";
+    public static String dbPath = "/mnt/d/Documentos/Escola/aeds3/tps/tp01/dados/filmes.db";
 
     public static Scanner sc = new Scanner(System.in);
 
@@ -112,7 +112,7 @@ class Programa {
     public static void Carregar() throws IOException {
         RandomAccessFile arq = new RandomAccessFile(dbPath,
                 "rw");
-                arq.setLength(0);
+        arq.setLength(0);
         try (BufferedReader br = new BufferedReader(
                 new FileReader(csvPath))) {
             Filme filme = new Filme();
@@ -151,14 +151,14 @@ class Programa {
 
         Long pos = filePointer;
         byte[] ba;
-        //escrever primeiro filme
+        // escrever primeiro filme
         if (pos == 0 && type != 1 && type != 3 && type != 4) {
             arq.writeInt(1);
             arq.writeBoolean(false);
             ba = filme.toByteArray();
             arq.writeInt(ba.length);
             arq.write(ba);
-        // escrever filme sem alterar id cabeçalho 
+            // escrever filme sem alterar id cabeçalho
         } else if (type == 1) {
             arq.seek(pos);
             arq.writeBoolean(false);
@@ -176,7 +176,7 @@ class Programa {
             ba = filme.toByteArray();
             arq.readInt();
             arq.write(ba);
-        // escrever filme sem alterar id cabeçalho e marcando-o como apagado
+            // escrever filme sem alterar id cabeçalho e marcando-o como apagado
         } else if (type == 3) {
             arq.seek(pos);
             arq.writeBoolean(true);
@@ -717,7 +717,7 @@ class Programa {
 
         int len;
         byte[] ba;
-        int blocos = 2;
+        int blocos = 2048;
         ArrayList<Integer> array1 = new ArrayList<Integer>();
         ArrayList<Integer> array2 = new ArrayList<Integer>();
         for (int i = 0; currentPosition < endPosition; i++) {
@@ -747,10 +747,9 @@ class Programa {
                 } else {
                     fitaCursor[i % caminhos] = escrever(filmes.get(j), fitaCursor[i % caminhos], 1, raf[i % caminhos]);
                 }
-                if(i % caminhos == 0) {
+                if (i % caminhos == 0) {
                     array1.add(filmes.get(j).getId());
-                }
-                else {
+                } else {
                     array2.add(filmes.get(j).getId());
                 }
             }
@@ -769,35 +768,36 @@ class Programa {
         boolean exit = true;
         int sizeSeg = 0;
         for (int i = 1; exit; i++) {
+            System.out.println();
             // zerar o ponteiro de cada grupo de arquivo
-            for (int j = 0; j < caminhos * 2; j++) {
-                raf[j].seek(0);
-                if(i % 2 != 0) {
+            for (int j = 0; j < caminhos; j++) {
+                if (i % 2 != 0) {
                     raf[(j % caminhos) + caminhos].setLength(0);
-                }
-                else {
+                    raf[j % caminhos].seek(0);
+                } else {
                     raf[j % caminhos].setLength(0);
+                    raf[(j % caminhos) + caminhos].seek(0);
                 }
             }
             // quantidade de segmentos por passagem
-            int seg = (int) Math.ceil((double) nFilmes/ (caminhos * (blocos * i)));
+            int seg = (int) Math.ceil((double) nFilmes / (caminhos * (blocos * i)));
             if (i == 1) {
                 sizeSeg = blocos;
-            }
-            else {
+            } else {
                 sizeSeg = sizeSeg * caminhos;
             }
 
             // percorrer setor
             int index = 0;
             for (int j = 1; j <= seg; j++) {
+                System.out.println();
                 boolean[] acabou = new boolean[caminhos];
                 int[] fitaIndex = new int[caminhos];
                 for (int x = 0; x < caminhos; x++) {
                     acabou[x] = false;
                     fitaIndex[x] = 0;
                 }
-                
+
                 // for representado o numero de comparações
                 for (int z = 0; z < caminhos * sizeSeg; z++) {
                     boolean flag = true;
@@ -809,6 +809,9 @@ class Programa {
                         } else {
                             index = (x % caminhos) + caminhos;
                         }
+                        if (raf[index].getFilePointer() == raf[index].length()) {
+                            acabou[index % caminhos] = true;
+                        }
 
                         if (!(acabou[index % caminhos])) {
                             Filme temp = new Filme();
@@ -816,7 +819,7 @@ class Programa {
                             if (raf[index].readBoolean()) {
                                 temp.setLapide(true);
                             } else {
-                               temp.setLapide(false);
+                                temp.setLapide(false);
                             }
                             len = raf[index].readInt();
                             ba = new byte[len];
@@ -829,16 +832,18 @@ class Programa {
 
                     // pegar menor filme
                     Node temp = heap.extractMin();
-                    if(temp.filme.getId() == 4) {
-                        System.out.println();
+                    System.out.print(temp.filme.getId() + " ");
+                    if (temp.filme.getId() == 9 && seg == 2) {
+                        System.out.println(); // debug
                     }
 
                     // andar com o ponteiro na fita vencedora
                     raf[temp.index].seek(temp.cursor);
                     fitaIndex[temp.index % caminhos]++;
 
-                    // checar se o segmento na fita acabou
-                    if(raf[temp.index].getFilePointer() == raf[temp.index].length() || fitaIndex[temp.index % caminhos] == sizeSeg) {
+                    // checar novamente se o segmento na fita acabou
+                    if (fitaIndex[temp.index % caminhos] == sizeSeg
+                            || raf[temp.index].getFilePointer() == raf[temp.index].length()) {
                         acabou[temp.index % caminhos] = true;
                     }
 
@@ -849,24 +854,26 @@ class Programa {
                         index = (j - 1) % caminhos;
                     }
 
-                        if(temp.filme.getLapide()) {
-                            escrever(temp.filme, raf[index].getFilePointer(), 3, raf[index]);
-                        }
-                        else {
-                            escrever(temp.filme, raf[index].getFilePointer(), 1, raf[index]);
-                        }
+                    // esvrever menor filme marcado ou não
+                    if (temp.filme.getLapide()) {
+                        escrever(temp.filme, raf[index].getFilePointer(), 3, raf[index]);
+                    } else {
+                        escrever(temp.filme, raf[index].getFilePointer(), 1, raf[index]);
+                    }
 
-                     for (int x = 0; x < caminhos; x++) {
+                    // checar se as duas fitas ou acabaram o segmento ou chegaram no fim
+                    for (int x = 0; x < caminhos; x++) {
                         if (!(acabou[x])) {
                             flag = false;
                         }
                     }
+
+                    // checar se chegou no fim do segmento
                     if (flag) {
                         z = caminhos * sizeSeg; // break
-                    } 
+                    }
                 }
-                    
-                
+
             }
 
             if (seg == 1) {
@@ -910,6 +917,6 @@ class Programa {
         RandomAccessFile arq = new RandomAccessFile(dbPath,
                 "rw");
 
-        intercalaVariosCaminho(arq, 2);
+        intercalaVariosCaminho(arq, 3);
     }
 }
