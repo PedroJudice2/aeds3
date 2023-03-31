@@ -10,8 +10,8 @@ import java.util.regex.Pattern;
 class Programa {
 
     // COLOQUE O CAMINHO DA DO SEU CSV E DO SEU AQUIVO
-    public static String csvPath = "/mnt/c/Users/User/Documents/Pedro/Base de Dados/Pasta1.csv";
-    public static String dbPath = "/mnt/c/Users/User/Documents/Pedro/tps/tp01/casos teste/teste1.db";
+    public static String csvPath = "/mnt/c/Users/otavi/Documents/pedro/PUC/aeds3/Base de Dados/NetFlix.csv";
+    public static String dbPath = "/mnt/c/Users/otavi/Documents/pedro/PUC/aeds3/tps/tp01/dados/filmes.db";
 
     public static Scanner sc = new Scanner(System.in);
 
@@ -692,7 +692,6 @@ class Programa {
 
     public static void intercalaVariosCaminho(RandomAccessFile arq, int caminhos) throws IOException {
         int nFilmes = filmeCount(arq);
-        int ultimoId = arq.readInt();
         // testar se caminho é valido
         if (caminhos > nFilmes || caminhos < 2) {
             throw new IOException("caminho invalido");
@@ -717,7 +716,7 @@ class Programa {
 
         int len;
         byte[] ba;
-        int blocos = 2;
+        int blocos = 1000;
         ArrayList<Integer> array1 = new ArrayList<Integer>();
         ArrayList<Integer> array2 = new ArrayList<Integer>();
         for (int i = 0; currentPosition < endPosition; i++) {
@@ -767,51 +766,54 @@ class Programa {
 
         // intercalação
         boolean exit = true;
+        int sizeSeg = 0;
         for (int i = 1; exit; i++) {
             // zerar o ponteiro de cada grupo de arquivo
-            for (int j = 0; j < caminhos * 2; j++)
+            for (int j = 0; j < caminhos * 2; j++) {
                 raf[j].seek(0);
+                if(i % 2 != 0) {
+                    raf[(j % caminhos) + caminhos].setLength(0);
+                }
+                else {
+                    raf[j % caminhos].setLength(0);
+                }
+            }
             // quantidade de segmentos por passagem
-            int seg = (int) Math.ceil((double) nFilmes/ (caminhos * blocos));
-            int sizeSeg = blocos * i;
-
-            int[] indexCaminho = new int[caminhos];
-            boolean[] acabou = new boolean[caminhos];
-            for (int j = 0; j < caminhos; j++) {
-                acabou[j] = false;
+            int seg = (int) Math.ceil((double) nFilmes/ (caminhos * (blocos * i)));
+            if (i == 1) {
+                sizeSeg = blocos;
+            }
+            else {
+                sizeSeg = sizeSeg * caminhos;
             }
 
             // percorrer setor
+            int index = 0;
             for (int j = 1; j <= seg; j++) {
-                boolean flag = true;
-                int index;
                 ArrayList<Filme> filmes = new ArrayList<Filme>();
-                do {
+                
 
                     // achar menor filme
-                    Filme menor = new Filme();
-                    menor.setIdManual(ultimoId);
-                    Long[] cursor = new Long[caminhos];
                     for (int x = 0; x < caminhos * sizeSeg; x++) {
-                        if (x % 2 == 0) {
+                        if (i % 2 != 0) {
                             index = x % caminhos;
                         } else {
                             index = (x % caminhos) + caminhos;
                         }
 
-                        if (indexCaminho[x] < j * sizeSeg && raf[index].getFilePointer() < raf[index].length()) {
+                        if (raf[index].getFilePointer() < raf[index].length()) {
                             Filme temp = new Filme();
-                            long teste = raf[index].getFilePointer();
-                            cursor[x] = raf[index].getFilePointer();
-                            raf[index].seek(teste + 1);
+                            long cursor = raf[index].getFilePointer();
+                            raf[index].seek(cursor + 1);
                             len = raf[index].readInt();
                             ba = new byte[len];
                             raf[index].read(ba);
                             temp.fromByteArray(ba);
                             filmes.add(temp);
-                            indexCaminho[x]++;
                         }
                     }
+
+                    filmeSort(filmes);
                     // escrever menor filme
                     if (i % 2 != 0) {
                         index = ((j - 1) % caminhos) + caminhos;
@@ -819,35 +821,21 @@ class Programa {
                         index = (j - 1) % caminhos;
                     }
 
-                    for (Filme filme : filmes)
-                        escrever(filme, raf[index].getFilePointer(), 1, raf[index]);
+                    for (Filme filme : filmes)  {
+                        if(filme.getLapide()) {
+                            escrever(filme, raf[index].getFilePointer(), 3, raf[index]);
+                        }
+                        else {
+                            escrever(filme, raf[index].getFilePointer(), 1, raf[index]);
+                        }
 
-                    // checar se chegou no fim do segmento
-                    for (int x = 0; x < caminhos; x++) {
-                        if (i % 2 != 0) {
-                            index = x % caminhos;
-                        } else {
-                            index = (x % caminhos) + caminhos;
-                        }
-                        long curr = raf[index].getFilePointer();
-                        long end = raf[index].length();
-                        if ((curr >= end) || indexCaminho[x] >= j * sizeSeg) {
-                            flag = false;
-                        } else {
-                            flag = true;
-                            x = caminhos;
-                        }
                     }
-                } while (flag);
+                
             }
 
             if (seg == 1) {
                 exit = false;
-                if (i % 2 != 0) {
-                    fileClone(arq, raf[((i) % caminhos) + caminhos]);
-                } else {
-                    fileClone(arq, raf[(i % caminhos)]);
-                }
+                fileClone(arq, raf[index]);
             }
         }
 
@@ -886,6 +874,6 @@ class Programa {
         RandomAccessFile arq = new RandomAccessFile(dbPath,
                 "rw");
 
-        intercalaVariosCaminho(arq, 2);
+        intercalaVariosCaminho(arq, 6);
     }
 }
