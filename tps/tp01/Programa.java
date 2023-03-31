@@ -833,9 +833,6 @@ class Programa {
                     // pegar menor filme
                     Node temp = heap.extractMin();
                     System.out.print(temp.filme.getId() + " ");
-                    if (temp.filme.getId() == 9 && seg == 2) {
-                        System.out.println(); // debug
-                    }
 
                     // andar com o ponteiro na fita vencedora
                     raf[temp.index].seek(temp.cursor);
