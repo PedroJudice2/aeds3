@@ -692,6 +692,7 @@ class Programa {
 
     public static void intercalaVariosCaminho(RandomAccessFile arq, int caminhos) throws IOException {
         int nFilmes = filmeCount(arq);
+        arq.readInt();
         // testar se caminho é valido
         if (caminhos > nFilmes || caminhos < 2) {
             throw new IOException("caminho invalido");
@@ -716,7 +717,7 @@ class Programa {
 
         int len;
         byte[] ba;
-        int blocos = 1000;
+        int blocos = 2;
         ArrayList<Integer> array1 = new ArrayList<Integer>();
         ArrayList<Integer> array2 = new ArrayList<Integer>();
         for (int i = 0; currentPosition < endPosition; i++) {
@@ -790,46 +791,81 @@ class Programa {
             // percorrer setor
             int index = 0;
             for (int j = 1; j <= seg; j++) {
-                ArrayList<Filme> filmes = new ArrayList<Filme>();
+                boolean[] acabou = new boolean[caminhos];
+                int[] fitaIndex = new int[caminhos];
+                for (int x = 0; x < caminhos; x++) {
+                    acabou[x] = false;
+                    fitaIndex[x] = 0;
+                }
                 
-
-                    // achar menor filme
-                    for (int x = 0; x < caminhos * sizeSeg; x++) {
+                // for representado o numero de comparações
+                for (int z = 0; z < caminhos * sizeSeg; z++) {
+                    boolean flag = true;
+                    MinHeap heap = new MinHeap(caminhos);
+                    // compara filmes e achar o menor
+                    for (int x = 0; x < caminhos; x++) {
                         if (i % 2 != 0) {
                             index = x % caminhos;
                         } else {
                             index = (x % caminhos) + caminhos;
                         }
 
-                        if (raf[index].getFilePointer() < raf[index].length()) {
+                        if (!(acabou[index % caminhos])) {
                             Filme temp = new Filme();
                             long cursor = raf[index].getFilePointer();
-                            raf[index].seek(cursor + 1);
+                            if (raf[index].readBoolean()) {
+                                temp.setLapide(true);
+                            } else {
+                               temp.setLapide(false);
+                            }
                             len = raf[index].readInt();
                             ba = new byte[len];
                             raf[index].read(ba);
                             temp.fromByteArray(ba);
-                            filmes.add(temp);
+                            heap.insert(temp, index, raf[index].getFilePointer());
+                            raf[index].seek(cursor);
                         }
                     }
 
-                    filmeSort(filmes);
-                    // escrever menor filme
+                    // pegar menor filme
+                    Node temp = heap.extractMin();
+                    if(temp.filme.getId() == 4) {
+                        System.out.println();
+                    }
+
+                    // andar com o ponteiro na fita vencedora
+                    raf[temp.index].seek(temp.cursor);
+                    fitaIndex[temp.index % caminhos]++;
+
+                    // checar se o segmento na fita acabou
+                    if(raf[temp.index].getFilePointer() == raf[temp.index].length() || fitaIndex[temp.index % caminhos] == sizeSeg) {
+                        acabou[temp.index % caminhos] = true;
+                    }
+
+                    // ver em qual fita escrever menor filme
                     if (i % 2 != 0) {
                         index = ((j - 1) % caminhos) + caminhos;
                     } else {
                         index = (j - 1) % caminhos;
                     }
 
-                    for (Filme filme : filmes)  {
-                        if(filme.getLapide()) {
-                            escrever(filme, raf[index].getFilePointer(), 3, raf[index]);
+                        if(temp.filme.getLapide()) {
+                            escrever(temp.filme, raf[index].getFilePointer(), 3, raf[index]);
                         }
                         else {
-                            escrever(filme, raf[index].getFilePointer(), 1, raf[index]);
+                            escrever(temp.filme, raf[index].getFilePointer(), 1, raf[index]);
                         }
 
+                     for (int x = 0; x < caminhos; x++) {
+                        if (!(acabou[x])) {
+                            flag = false;
+                        }
                     }
+                    if (flag) {
+                        z = caminhos * sizeSeg; // break
+                    } 
+                }
+                    
                 
             }
 
@@ -874,6 +910,6 @@ class Programa {
         RandomAccessFile arq = new RandomAccessFile(dbPath,
                 "rw");
 
-        intercalaVariosCaminho(arq, 6);
+        intercalaVariosCaminho(arq, 2);
     }
 }
