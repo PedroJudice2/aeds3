@@ -78,15 +78,15 @@ public class BPlusTree {
         }
 
         public void splitChild(LeafNode child, int index) {
-            int newSize = (int) Math.ceil((double) size / 2);
+            int newSize = (int) Math.ceil((double) child.size / 2);
             LeafNode newChild = new LeafNode();
-            for (int i = newSize; i < child.size; i++) {
+            int oldChildSize = child.size;
+            for (int i = newSize; i < oldChildSize; i++) {
                 newChild.keys[newChild.size] = child.keys[i];
-                newChild.values[newChild.size] = child.values[i];
+                newChild.values[newChild.size++] = child.values[i];
                 child.keys[i] = 0;
                 child.values[i] = 0;
                 child.size--;
-                newChild.size++;
             }
             child.next = newChild;
             children[index + 1] = newChild;
@@ -95,11 +95,14 @@ public class BPlusTree {
         }
 
         public void splitChild(InternalNode child, int index) {
-            int newSize = ((int) Math.floor((double) size / 2));
+            int newSize = ((int) Math.floor((double) child.size / 2));
 
             InternalNode newChild = new InternalNode();
+            int oldChildSize = child.size;
             int tmp = child.keys[newSize];
-            for (int i = newSize + 1; i < child.size; i++) {
+            child.keys[newSize] = 0;
+            child.size--;
+            for (int i = newSize + 1; i < oldChildSize; i++) {
                 newChild.keys[newChild.size] = child.keys[i];
                 newChild.children[newChild.size++] = child.children[i];
                 child.keys[i] = 0;
@@ -107,6 +110,7 @@ public class BPlusTree {
                 child.size--;
             }
             newChild.children[newChild.size] = child.children[order];
+            child.children[order] = null;
             children[index + 1] = newChild;
             keys[index] = tmp;
             size++;
@@ -114,7 +118,7 @@ public class BPlusTree {
 
         protected int findIndex(int key) {
             int index = 0;
-            while (index < size && keys[index] < key) {
+            while (index < size && keys[index] <= key) {
                 index++;
             }
             return index;
