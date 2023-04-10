@@ -1,5 +1,4 @@
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -15,6 +14,10 @@ class Programa {
 
     public static Scanner sc = new Scanner(System.in);
 
+    public static BPlusTree tree = new BPlusTree(8);
+
+    public static ArrayList<Long> disponivel = new ArrayList<Long>();
+
     public static void main(String[] args) {
         String choice;
         try {
@@ -24,8 +27,10 @@ class Programa {
             if (Pattern.matches("^(?:1|t(?:rue)?|y(?:es)?|ok(?:ay)?|s(?:im)?)$", carrega)) {
                 System.out.println("Carregando...");
                 Carregar();
+            } else {
+                System.out.println("Carregando...");
+                carregarArvore();
             }
-            // lerTodos();
             do {
                 System.out.print("\033[H\033[2J");
                 System.out.println("Opções: ");
@@ -33,8 +38,7 @@ class Programa {
                 System.out.println("pesquisar op 2 ");
                 System.out.println("Atualizar op 3 ");
                 System.out.println("Adicionar op 4 ");
-                System.out.println("Ordenar op 5 ");
-                System.out.println("ler todos op 6");
+                System.out.println("ler todos op 5");
                 System.out.println(getIntCabecalho());
                 int op;
 
@@ -42,7 +46,7 @@ class Programa {
                 do {
                     System.out.print("Digite a opção desejada: ");
                     op = sc.nextInt();
-                } while (op != 1 && op != 2 && op != 3 && op != 4 && op != 5 && op != 6);
+                } while (op != 1 && op != 2 && op != 3 && op != 4 && op != 5);
 
                 // Opção para exclusão
                 if (op == 1) {
@@ -62,6 +66,7 @@ class Programa {
                     int idBusca = sc.nextInt();
                     sc.nextLine();
                     System.out.println();
+                    System.out.println(tree.search(idBusca));
                     Filme filme = lerId(idBusca);
                     if (filme != null) {
                         System.out.println(filme);
@@ -89,9 +94,6 @@ class Programa {
                     Filme filme = getFilmeInclude();
                     chargeFilmeNovo(filme);
                     System.out.println(filme);
-                } else if (op == 5) {
-                    sc.nextLine();
-                    testeIntercala();
                 } else if (op == 6) {
                     sc.nextLine();
                     lerTodos();
@@ -118,7 +120,7 @@ class Programa {
             Filme filme = new Filme();
             br.readLine();
             String line = br.readLine();
-            Long filePointer = (long) 0;
+            long filePointer = 0;
 
             while (line != null) {
                 String[] vect = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1);
@@ -158,14 +160,16 @@ class Programa {
             ba = filme.toByteArray();
             arq.writeInt(ba.length);
             arq.write(ba);
+            tree.insert(filme.getId(), filePointer);
 
-            // escrever filme sem alterar id cabeçalho
+            // escrever filme sem alterar id cabeçalho (update)
         } else if (type == 1) {
             arq.seek(pos);
             arq.writeBoolean(false);
             ba = filme.toByteArray();
             arq.writeInt(ba.length);
             arq.write(ba);
+            tree.update(filme.getId(), filePointer);
 
             // escrever filme incrementando e sem escrever o tamanho (usado para
             // sobrescrever um filme)
@@ -180,6 +184,7 @@ class Programa {
             ba = filme.toByteArray();
             arq.readInt();
             arq.write(ba);
+            tree.insert(filme.getId(), filePointer);
 
             // escrever filme sem alterar id cabeçalho e marcando-o como apagado
         } else if (type == 3) {
@@ -189,13 +194,14 @@ class Programa {
             arq.writeInt(ba.length);
             arq.write(ba);
             // escrever filme sem alterar id cabeçalho e sem escrever o tamanho (usado para
-            // sobrescrever um filme)
+            // sobrescrever um filme) (update)
         } else if (type == 4) {
             arq.seek(pos);
             arq.writeBoolean(false);
             ba = filme.toByteArray();
             arq.readInt();
             arq.write(ba);
+            tree.update(filme.getId(), filePointer);
 
             // esvrever filme incrementando o id cabeçalho
         } else {
@@ -209,6 +215,7 @@ class Programa {
             ba = filme.toByteArray();
             arq.writeInt(ba.length);
             arq.write(ba);
+            tree.insert(filme.getId(), filePointer);
         }
 
         pos = arq.getFilePointer();
@@ -242,6 +249,35 @@ class Programa {
         arq.close();
     }
 
+    public static void carregarArvore() throws IOException {
+        RandomAccessFile arq = new RandomAccessFile(dbPath,
+                "rw");
+        arq.seek(4);
+
+        long currentPosition = arq.getFilePointer();
+        long endPosition = arq.length();
+        int len;
+        byte[] ba;
+        Filme filme = new Filme();
+        while (currentPosition < endPosition) {
+            if (arq.readBoolean()) {
+                len = arq.readInt();
+                long temp = arq.getFilePointer();
+                arq.seek(temp + len);
+                currentPosition = arq.getFilePointer();
+            } else {
+                len = arq.readInt();
+                ba = new byte[len];
+                arq.read(ba);
+                filme.fromByteArray(ba);
+                tree.insert(filme.getId(), currentPosition);
+                currentPosition = arq.getFilePointer();
+            }
+        }
+
+        arq.close();
+    }
+
     public static void lerTodos(RandomAccessFile arq) throws IOException {
         arq.seek(0);
         long currentPosition = arq.getFilePointer();
@@ -262,252 +298,135 @@ class Programa {
 
     }
 
-    public static Filme[] getNFilms(int n, long cursor) throws IOException {
-        RandomAccessFile arq = new RandomAccessFile(dbPath,
-                "rw");
-        arq.seek(cursor);
-        int len;
-        byte[] ba;
-        Filme[] filme = new Filme[n];
-
-        for (int i = 0; i < n; i++) {
-            arq.seek(arq.getFilePointer() + 1);
-            len = arq.readInt();
-            ba = new byte[len];
-            arq.read(ba);
-            filme[i] = new Filme();
-            filme[i].fromByteArray(ba);
-        }
-
-        arq.close();
-
-        return filme;
-    }
-
-    public static void filmeSort(ArrayList<Filme> filme) {
-        quicksort(0, filme.size() - 1, filme);
-    }
-
-    public static void quicksort(int esq, int dir, ArrayList<Filme> filme) {
-        int i = esq, j = dir;
-        int pivo = filme.get((dir + esq) / 2).getId();
-        while (i <= j) {
-            while (filme.get(i).getId() < pivo)
-                i++;
-            while (filme.get(j).getId() > pivo)
-                j--;
-            if (i <= j) {
-                // swap
-                Filme temp = filme.get(i);
-                filme.set(i, filme.get(j));
-                filme.set(j, temp);
-                i++;
-                j--;
-            }
-        }
-        if (esq < j)
-            quicksort(esq, j, filme);
-        if (i < dir)
-            quicksort(i, dir, filme);
-    }
-
     public static Filme lerId(int id) throws IOException {
         RandomAccessFile arq = new RandomAccessFile(dbPath,
                 "rw");
-        if (id > arq.readInt()) {
+
+        if (id > tree.getSize()) {
             arq.close();
             return null;
         }
-        long currentPosition = arq.getFilePointer();
-        long endPosition = arq.length();
-        int len;
-        byte[] ba;
-        Boolean achou = false;
-        Filme filme = new Filme();
-        while (currentPosition < endPosition) {
-            if (arq.readBoolean()) {
-                len = arq.readInt();
-                long temp = arq.getFilePointer();
-                arq.seek(temp + len);
-                currentPosition = arq.getFilePointer();
-            } else {
-                len = arq.readInt();
-                ba = new byte[len];
-                arq.read(ba);
-                filme.fromByteArray(ba);
-                if (filme.getId() == id) {
-                    currentPosition = endPosition;
-                    achou = true;
-                } else {
-                    currentPosition = arq.getFilePointer();
-                }
-            }
-        }
-        arq.close();
-        if (achou) {
-            return filme;
-        } else {
+        long cursor = tree.search(id);
+        if (cursor == -1) {
+            arq.close();
             return null;
         }
+        arq.seek(cursor + 1);
+        int len = arq.readInt();
+        byte[] ba = new byte[len];
+        arq.read(ba);
+        Filme filme = new Filme();
+        filme.fromByteArray(ba);
+        arq.close();
+        return filme;
+
     }
 
-    public static int filmeCount(RandomAccessFile arq) throws IOException {
-        int count = 0;
-        arq.seek(0);
-        arq.readInt();
-        long currentPosition = arq.getFilePointer();
-        long endPosition = arq.length();
-        int len;
-        while (currentPosition < endPosition) {
-            if ((arq.readBoolean())) {
-                len = arq.readInt();
-                long temp = arq.getFilePointer();
-                arq.seek(temp + len);
-                currentPosition = arq.getFilePointer();
-            } else {
-                len = arq.readInt();
-                long temp = arq.getFilePointer();
-                arq.seek(temp + len);
-                currentPosition = arq.getFilePointer();
-                count++;
-            }
-        }
-        arq.seek(0);
-        return count;
+    public static int filmeCount() {
+        return tree.getCount();
     }
 
     public static boolean delete(int id) throws IOException {
         RandomAccessFile arq = new RandomAccessFile(dbPath,
                 "rw");
-        if (id > arq.readInt()) {
+
+        if (id > tree.getSize()) {
             arq.close();
             return false;
         }
-        long currentPosition = arq.getFilePointer();
-        long endPosition = arq.length();
-        int len;
-        Boolean achou = false;
-        while (currentPosition < endPosition) {
-            long cursor = currentPosition;
-            if (arq.readBoolean()) {
-                len = arq.readInt();
-                long temp = arq.getFilePointer();
-                arq.seek(temp + len);
-                currentPosition = arq.getFilePointer();
-            } else {
-                len = arq.readInt();
-                int tempID = arq.readInt();
-                if (id == tempID) {
-                    arq.seek(cursor);
-                    arq.writeBoolean(true);
-                    achou = true;
-                    currentPosition = endPosition;
-                } else {
-                    arq.seek(len + (cursor + 5));
-                    currentPosition = arq.getFilePointer();
-                }
-            }
-        }
-        arq.close();
-        if (achou) {
-            return true;
-        } else {
+        long cursor = tree.delete(id);
+        if (cursor == -1) {
+            arq.close();
             return false;
         }
+
+        arq.seek(cursor);
+        arq.writeBoolean(true);
+        disponivel.add(cursor);
+        arq.close();
+        return true;
     }
 
     public static boolean update(Filme novoFilme) throws IOException {
         RandomAccessFile arq = new RandomAccessFile(dbPath,
                 "rw");
-        if (novoFilme.getId() > arq.readInt()) {
+        if (novoFilme.getId() > tree.getSize()) {
             arq.close();
             return false;
         }
-        long currentPosition = arq.getFilePointer();
-        long endPosition = arq.length();
         int len;
         int flag = 0;
         byte[] ba;
         Boolean achou = false;
         Filme filme = new Filme();
-        while (currentPosition < endPosition) {
-            long cursor = currentPosition;
-            if (arq.readBoolean()) {
-                len = arq.readInt();
-                long temp = arq.getFilePointer();
-                arq.seek(temp + len);
-                currentPosition = arq.getFilePointer();
-            } else {
-                len = arq.readInt();
-                ba = new byte[len];
-                arq.read(ba);
-                filme.fromByteArray(ba);
-                if (filme.getId() == novoFilme.getId()) {
-                    // alterar campo do titulo
-                    if (!(novoFilme.getTitle().isBlank())) {
-                        if (!(novoFilme.getTitle().equals(filme.getTitle()))) {
-                            if (novoFilme.getTitle().length() > filme.getTitle().length()) {
-                                flag = 1;
-                            }
-                        }
-                        filme.setTitle(novoFilme.getTitle());
-                    }
-                    // alterar campo do tipo
-                    if (!(novoFilme.getType().isBlank())) {
-                        if (!(novoFilme.getType().equals(filme.getType()))) {
-                            if (novoFilme.getType().length() > filme.getType().length()) {
-                                flag = 1;
-                            }
-                        }
-                        filme.setType(novoFilme.getType());
-                    }
-                    // alterar campo do diretor
-                    if (!(novoFilme.getDirector().isBlank())) {
-                        if (!(novoFilme.getDirector().equals(filme.getDirector()))) {
-                            if (novoFilme.getDirector().length() > filme.getDirector().length()) {
-                                flag = 1;
-                            }
-                        }
-                        filme.setDirector(novoFilme.getDirector());
-                    }
-                    // alterar compo do pais
-                    if (!(novoFilme.getCountry().isBlank())) {
-                        if (!(novoFilme.getCountry().equals(filme.getCountry()))) {
-                            if (novoFilme.getCountry().length() > filme.getCountry().length()) {
-                                flag = 1;
-                            }
-                        }
-                        filme.setCountry(novoFilme.getCountry());
-                    }
-                    // alterar campo do ano de lançamento
-                    if (novoFilme.getReleaseYear() != 0) {
-                        filme.setReleaseYear(novoFilme.getReleaseYear());
-                    }
-                    // alterar campo de descrição
-                    if (!(novoFilme.getDescription().isBlank())) {
-                        if (!(novoFilme.getDescription().equals(filme.getDescription()))) {
-                            if (novoFilme.getDescription().length() > filme.getDescription().length()) {
-                                flag = 1;
-                            }
-                        }
-                        filme.setDescription(novoFilme.getDescription());
-                    }
-                    if (flag == 1) {
-                        arq.seek(cursor);
-                        arq.writeBoolean(true);
-                        escrever(filme, arq.length(), 1, arq);
-                        // TODO chamar função de ordenação
-                        currentPosition = endPosition;
-                        achou = true;
-                    } else {
-                        escrever(filme, cursor, 4, arq);
-                        currentPosition = endPosition;
-                        achou = true;
-                    }
-                } else {
-                    currentPosition = arq.getFilePointer();
+
+        long cursor = tree.search(novoFilme.getId());
+        if (cursor == -1) {
+            arq.close();
+            return false;
+        }
+        arq.seek(cursor + 1);
+        len = arq.readInt();
+        ba = new byte[len];
+        arq.read(ba);
+        filme.fromByteArray(ba);
+        // alterar campo do titulo
+        if (!(novoFilme.getTitle().isBlank())) {
+            if (!(novoFilme.getTitle().equals(filme.getTitle()))) {
+                if (novoFilme.getTitle().length() > filme.getTitle().length()) {
+                    flag = 1;
                 }
             }
+            filme.setTitle(novoFilme.getTitle());
+        }
+        // alterar campo do tipo
+        if (!(novoFilme.getType().isBlank())) {
+            if (!(novoFilme.getType().equals(filme.getType()))) {
+                if (novoFilme.getType().length() > filme.getType().length()) {
+                    flag = 1;
+                }
+            }
+            filme.setType(novoFilme.getType());
+        }
+        // alterar campo do diretor
+        if (!(novoFilme.getDirector().isBlank())) {
+            if (!(novoFilme.getDirector().equals(filme.getDirector()))) {
+                if (novoFilme.getDirector().length() > filme.getDirector().length()) {
+                    flag = 1;
+                }
+            }
+            filme.setDirector(novoFilme.getDirector());
+        }
+        // alterar compo do pais
+        if (!(novoFilme.getCountry().isBlank())) {
+            if (!(novoFilme.getCountry().equals(filme.getCountry()))) {
+                if (novoFilme.getCountry().length() > filme.getCountry().length()) {
+                    flag = 1;
+                }
+            }
+            filme.setCountry(novoFilme.getCountry());
+        }
+        // alterar campo do ano de lançamento
+        if (novoFilme.getReleaseYear() != 0) {
+            filme.setReleaseYear(novoFilme.getReleaseYear());
+        }
+        // alterar campo de descrição
+        if (!(novoFilme.getDescription().isBlank())) {
+            if (!(novoFilme.getDescription().equals(filme.getDescription()))) {
+                if (novoFilme.getDescription().length() > filme.getDescription().length()) {
+                    flag = 1;
+                }
+            }
+            filme.setDescription(novoFilme.getDescription());
+        }
+        if (flag == 1) {
+            arq.seek(cursor);
+            arq.writeBoolean(true);
+            escrever(filme, arq.length(), 1, arq);
+            achou = true;
+        } else {
+            escrever(filme, cursor, 4, arq);
+            achou = true;
         }
         arq.close();
         return achou;
@@ -661,34 +580,24 @@ class Programa {
     public static void chargeFilmeNovo(Filme filme) throws IOException {
         RandomAccessFile arq = new RandomAccessFile(dbPath,
                 "rw");
-        arq.readInt();
-        long currentPosition = arq.getFilePointer();
-        long endPosition = arq.length();
         byte[] ba;
         boolean achou = false;
 
-        while (currentPosition < endPosition) {
-            long cursor = arq.getFilePointer();
+        for (long cursor : disponivel) {
 
-            if (arq.readBoolean()) {
-                int tamanho = arq.readInt();
-                ba = filme.toByteArray();
-                if (ba.length <= tamanho) {
-                    escrever(filme, cursor, 2, arq);
-                    achou = true;
-                    currentPosition = endPosition; // Break;
-                }
-            } else {
-                int len = arq.readInt();
-                arq.seek(len + (cursor + 5));
-                currentPosition = arq.getFilePointer();
+            arq.seek(cursor + 1);
+            int tamanho = arq.readInt();
+            ba = filme.toByteArray();
+            if (ba.length <= tamanho) {
+                escrever(filme, cursor, 2, arq);
+                achou = true;
+                break;
             }
         }
         if (achou == false) {
             escrever(filme, arq.length(), 0, arq); // ponteiro direcionado para ultima posição do arquivo
         }
         arq.close();
-        // TODO reordenar
     }
 
     public static int getIntCabecalho() throws IOException {
@@ -697,232 +606,5 @@ class Programa {
         int valor = arq.readInt();
         arq.close();
         return valor;
-    }
-
-    public static void intercalaVariosCaminho(RandomAccessFile arq, int caminhos) throws IOException {
-        int nFilmes = filmeCount(arq);
-        arq.readInt();
-        // testar se caminho é valido
-        if (caminhos > nFilmes || caminhos < 2) {
-            throw new IOException("caminho invalido");
-        }
-
-        // Criar fitas
-        File[] fita = new File[caminhos * 2];
-        for (int i = 0; i < (caminhos * 2); i++) {
-            fita[i] = File.createTempFile("temp", ".db");
-        }
-
-        // Criar acesso para fitas
-        RandomAccessFile[] raf = new RandomAccessFile[caminhos * 2];
-        for (int i = 0; i < (caminhos * 2); i++) {
-            raf[i] = new RandomAccessFile(fita[i], "rw");
-        }
-
-        // distribuição
-        long currentPosition = arq.getFilePointer();
-        long endPosition = arq.length();
-        long[] fitaCursor = new long[caminhos];
-
-        int len;
-        byte[] ba;
-        int blocos = 2048;
-        ArrayList<Integer> array1 = new ArrayList<Integer>();
-        ArrayList<Integer> array2 = new ArrayList<Integer>();
-        for (int i = 0; currentPosition < endPosition; i++) {
-            ArrayList<Filme> filmes = new ArrayList<Filme>();
-
-            for (int j = 0; j < blocos && currentPosition < endPosition; j++) {
-                Filme filmetemp = new Filme();
-                arq.seek(currentPosition);
-                if (arq.readBoolean()) {
-                    filmetemp.setLapide(true);
-                } else {
-                    filmetemp.setLapide(false);
-                }
-                len = arq.readInt();
-                ba = new byte[len];
-                arq.read(ba);
-                filmetemp.fromByteArray(ba);
-                filmes.add(filmetemp);
-                currentPosition = arq.getFilePointer();
-            }
-
-            filmeSort(filmes);
-
-            for (int j = 0; j < filmes.size(); j++) {
-                if (filmes.get(j).getLapide()) {
-                    fitaCursor[i % caminhos] = escrever(filmes.get(j), fitaCursor[i % caminhos], 3, raf[i % caminhos]);
-                } else {
-                    fitaCursor[i % caminhos] = escrever(filmes.get(j), fitaCursor[i % caminhos], 1, raf[i % caminhos]);
-                }
-                if (i % caminhos == 0) {
-                    array1.add(filmes.get(j).getId());
-                } else {
-                    array2.add(filmes.get(j).getId());
-                }
-            }
-
-        }
-
-        for (int a : array1) {
-            System.out.print(a + " ");
-        }
-        System.out.println();
-        for (int a : array2) {
-            System.out.print(a + " ");
-        }
-
-        // intercalação
-        boolean exit = true;
-        int sizeSeg = 0;
-        for (int i = 1; exit; i++) {
-            System.out.println();
-            // zerar o ponteiro de cada grupo de arquivo
-            for (int j = 0; j < caminhos; j++) {
-                if (i % 2 != 0) {
-                    raf[(j % caminhos) + caminhos].setLength(0);
-                    raf[j % caminhos].seek(0);
-                } else {
-                    raf[j % caminhos].setLength(0);
-                    raf[(j % caminhos) + caminhos].seek(0);
-                }
-            }
-            // quantidade de segmentos por passagem
-            int seg = (int) Math.ceil((double) nFilmes / (caminhos * (blocos * i)));
-            if (i == 1) {
-                sizeSeg = blocos;
-            } else {
-                sizeSeg = sizeSeg * caminhos;
-            }
-
-            // percorrer setor
-            int index = 0;
-            for (int j = 1; j <= seg; j++) {
-                System.out.println();
-                boolean[] acabou = new boolean[caminhos];
-                int[] fitaIndex = new int[caminhos];
-                for (int x = 0; x < caminhos; x++) {
-                    acabou[x] = false;
-                    fitaIndex[x] = 0;
-                }
-
-                // for representado o numero de comparações
-                for (int z = 0; z < caminhos * sizeSeg; z++) {
-                    boolean flag = true;
-                    MinHeap heap = new MinHeap(caminhos);
-                    // compara filmes e achar o menor
-                    for (int x = 0; x < caminhos; x++) {
-                        if (i % 2 != 0) {
-                            index = x % caminhos;
-                        } else {
-                            index = (x % caminhos) + caminhos;
-                        }
-                        if (raf[index].getFilePointer() == raf[index].length()) {
-                            acabou[index % caminhos] = true;
-                        }
-
-                        if (!(acabou[index % caminhos])) {
-                            Filme temp = new Filme();
-                            long cursor = raf[index].getFilePointer();
-                            if (raf[index].readBoolean()) {
-                                temp.setLapide(true);
-                            } else {
-                                temp.setLapide(false);
-                            }
-                            len = raf[index].readInt();
-                            ba = new byte[len];
-                            raf[index].read(ba);
-                            temp.fromByteArray(ba);
-                            heap.insert(temp, index, raf[index].getFilePointer());
-                            raf[index].seek(cursor);
-                        }
-                    }
-
-                    // pegar menor filme
-                    Node temp = heap.extractMin();
-                    System.out.print(temp.filme.getId() + " ");
-
-                    // andar com o ponteiro na fita vencedora
-                    raf[temp.index].seek(temp.cursor);
-                    fitaIndex[temp.index % caminhos]++;
-
-                    // checar novamente se o segmento na fita acabou
-                    if (fitaIndex[temp.index % caminhos] == sizeSeg
-                            || raf[temp.index].getFilePointer() == raf[temp.index].length()) {
-                        acabou[temp.index % caminhos] = true;
-                    }
-
-                    // ver em qual fita escrever menor filme
-                    if (i % 2 != 0) {
-                        index = ((j - 1) % caminhos) + caminhos;
-                    } else {
-                        index = (j - 1) % caminhos;
-                    }
-
-                    // esvrever menor filme marcado ou não
-                    if (temp.filme.getLapide()) {
-                        escrever(temp.filme, raf[index].getFilePointer(), 3, raf[index]);
-                    } else {
-                        escrever(temp.filme, raf[index].getFilePointer(), 1, raf[index]);
-                    }
-
-                    // checar se as duas fitas ou acabaram o segmento ou chegaram no fim
-                    for (int x = 0; x < caminhos; x++) {
-                        if (!(acabou[x])) {
-                            flag = false;
-                        }
-                    }
-
-                    // checar se chegou no fim do segmento
-                    if (flag) {
-                        z = caminhos * sizeSeg; // break
-                    }
-                }
-
-            }
-
-            if (seg == 1) {
-                exit = false;
-                fileClone(arq, raf[index]);
-            }
-        }
-
-        /*
-         * for (int i = 0; i < caminhos * 2; i++) {
-         * lerTodos(raf[i]);
-         * System.out.println(
-         * "-------------------------------------------------------------------------------------------"
-         * );
-         * }
-         */
-
-        // exlcuir fitas
-        for (int i = 0; i < (caminhos * 2); i++) {
-            raf[i].close();
-            fita[i].deleteOnExit();
-        }
-    }
-
-    public static void fileClone(RandomAccessFile a, RandomAccessFile b) throws IOException {
-        a.seek(0);
-        int cabecalho = a.readInt();
-        a.setLength(0);
-        a.writeInt(cabecalho);
-        b.seek(0);
-
-        byte[] buffer = new byte[1024];
-        int bytesRead;
-        while ((bytesRead = b.read(buffer)) != -1) {
-            a.write(buffer, 0, bytesRead);
-        }
-
-    }
-
-    public static void testeIntercala() throws IOException {
-        RandomAccessFile arq = new RandomAccessFile(dbPath,
-                "rw");
-
-        intercalaVariosCaminho(arq, 3);
     }
 }

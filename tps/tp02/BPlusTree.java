@@ -3,6 +3,8 @@ public class BPlusTree {
 
     private Node root;
     private int order;
+    private int size = 0;
+    private int count = 0;
 
     public BPlusTree(int order) {
         this.root = null;
@@ -20,6 +22,8 @@ public class BPlusTree {
             newRoot.splitChild(0);
             root = newRoot;
         }
+        size++;
+        count++;
     }
 
     public void readAll() {
@@ -32,14 +36,15 @@ public class BPlusTree {
         if (root == null || root.size == 0) {
             return -1;
         }
+        count--;
         return root.delete(key);
     }
 
-    public boolean update(int key, long value) {
+    public boolean update(int key, long newValue) {
         if (root == null || root.size == 0) {
             return false;
         }
-        return root.update(key, value);
+        return root.update(key, newValue);
     }
 
     public long search(int key) {
@@ -47,6 +52,14 @@ public class BPlusTree {
             return -1;
         }
         return root.search(key);
+    }
+
+    public int getSize() {
+        return size;
+    }
+
+    public int getCount() {
+        return count;
     }
 
     private abstract class Node {
