@@ -1,3 +1,4 @@
+
 public class BPlusTree {
 
     private Node root;
@@ -21,16 +22,25 @@ public class BPlusTree {
         }
     }
 
-    /*
-     * public long delete(int key) {
-     * if (root == null || root.size == 0) {
-     * return -1;
-     * }
-     * 
-     * root.delete()
-     * 
-     * }
-     */
+    public void readAll() {
+        if (root == null)
+            throw new RuntimeException("empty tree");
+        root.print();
+    }
+
+    public long delete(int key) {
+        if (root == null || root.size == 0) {
+            return -1;
+        }
+        return root.delete(key);
+    }
+
+    public boolean update(int key, long value) {
+        if (root == null || root.size == 0) {
+            return false;
+        }
+        return root.update(key, value);
+    }
 
     public long search(int key) {
         if (root == null) {
@@ -53,7 +63,11 @@ public class BPlusTree {
 
         public abstract long search(int key);
 
-        // public abstract long delete(int key);
+        public abstract long delete(int key);
+
+        public abstract boolean update(int key, long value);
+
+        public abstract void print();
 
         public boolean isOverflow() {
             return size == order;
@@ -92,14 +106,23 @@ public class BPlusTree {
             return children[index].search(key);
         }
 
-        /*
-         * public Long delete(int key) {
-         * Long pointer = 0;
-         * int index = findIndex(key);
-         * pointer = children[index].delete();
-         * 
-         * }
-         */
+        public long delete(int key) {
+            long pointer = 0;
+            int index = findIndex(key);
+            pointer = children[index].delete(key);
+            return pointer;
+        }
+
+        public boolean update(int key, long value) {
+            boolean success = false;
+            int index = findIndex(key);
+            success = children[index].update(key, value);
+            return success;
+        }
+
+        public void print() {
+            children[0].print();
+        }
 
         public void splitChild(int index) {
             if (children[index] instanceof LeafNode) {
@@ -120,7 +143,7 @@ public class BPlusTree {
                 child.values[i] = 0;
                 child.size--;
             }
-            child.next = newChild;
+            child.setNext(newChild);
             insert(newChild.keys[0], index, newChild);
         }
 
@@ -151,6 +174,7 @@ public class BPlusTree {
             }
             return index;
         }
+
     }
 
     private class LeafNode extends Node {
@@ -163,7 +187,14 @@ public class BPlusTree {
             this.keys = new int[order];
             this.values = new long[order];
             this.next = null;
+        }
 
+        public void setNext(LeafNode next) {
+            this.next = next;
+        }
+
+        public LeafNode getNext() {
+            return next;
         }
 
         public void insert(int key, long value) {
@@ -180,7 +211,10 @@ public class BPlusTree {
         public long search(int key) {
             int index = findIndex(key);
             if (index < size && keys[index] == key) {
-                return values[index];
+                if (values[index] != 0)
+                    return values[index];
+                else
+                    return -1;
             } else {
                 return -1;
             }
@@ -190,25 +224,34 @@ public class BPlusTree {
             int index = findIndex(key);
             if (index < size && keys[index] == key) {
                 long value = values[index];
-                for (int i = index; i < size - 1; i++) {
-                    keys[i] = keys[i + 1];
-                    values[i] = values[i + 1];
-                }
-                keys[size - 1] = 0;
-                values[size - 1] = 0;
-                size--;
+                values[index] = 0;
                 return value;
             } else {
                 return -1;
             }
         }
 
-        public boolean isOverflow() {
-            return size == order;
+        public boolean update(int key, long value) {
+            int index = findIndex(key);
+            if (index < size && keys[index] == key) {
+                values[index] = value;
+                return true;
+            } else {
+                return false;
+            }
         }
 
-        public boolean isDownFlow() {
-            return size < Math.floor((double) order / 2);
+        public void print() {
+            for (int i = 0; i < size; i++) {
+                System.out.println("keys[" + i + "]: " + keys[i] + " values[" + i + "]: " + values[i]);
+            }
+            if (next != null) {
+                getNext().print();
+            }
+        }
+
+        public boolean isOverflow() {
+            return size == order;
         }
 
         protected int findIndex(int key) {
@@ -218,5 +261,6 @@ public class BPlusTree {
             }
             return index;
         }
+
     }
 }

@@ -12,7 +12,6 @@ class Programa {
     // COLOQUE O CAMINHO DA DO SEU CSV E DO SEU AQUIVO
     public static String csvPath = "/mnt/d/Documentos/Escola/aeds3/Base de Dados/NetFlix.csv";
     public static String dbPath = "/mnt/d/Documentos/Escola/aeds3/tps/tp01/dados/filmes.db";
-    public static String treePath = "/mnt/d/Documentos/Escola/aeds3/tps/tp02/dados/arvore.db";
 
     public static Scanner sc = new Scanner(System.in);
 
