@@ -31,6 +31,26 @@ public class Bucket {
         }
     }
 
+    public long search(int key) {
+
+        return binarySearch(key, 0, size);
+    }
+
+    public long binarySearch(int key, int start, int end) {
+        int mid = (start + end) / 2;
+
+        if (start > end) {
+            return -1;
+
+        } else if (node[mid].getKey() == key) {
+            return node[mid].getValue();
+        } else if (node[mid].getKey() > key) {
+            return binarySearch(key, start, mid - 1);
+        } else {
+            return binarySearch(key, mid + 1, end);
+        }
+    }
+
     public void remove(int index) {
         for (int i = index; i < size - 1; i++) {
             node[i] = node[i + 1];

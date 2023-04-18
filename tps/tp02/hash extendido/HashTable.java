@@ -9,7 +9,7 @@ public class HashTable {
         int size = (int) Math.pow(2, depth);
         array = new Bucket[size];
         for (int i = 0; i < size; i++) {
-            array[0] = new Bucket(depth);
+            array[i] = new Bucket(depth);
         }
         arraySize = size;
     }
@@ -57,5 +57,13 @@ public class HashTable {
             }
         }
 
+    }
+
+    public long search(int key) {
+
+        int hash = hash(key);
+        long result = array[hash].search(key);
+
+        return result;
     }
 }
