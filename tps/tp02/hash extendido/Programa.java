@@ -14,7 +14,7 @@ class Programa {
 
     public static Scanner sc = new Scanner(System.in);
 
-    public static BPlusTree tree = new BPlusTree(8);
+    public static HashTable hash = new HashTable();
 
     public static ArrayList<Long> disponivel = new ArrayList<Long>();
 
@@ -66,7 +66,7 @@ class Programa {
                     int idBusca = sc.nextInt();
                     sc.nextLine();
                     System.out.println();
-                    System.out.println(tree.search(idBusca));
+                    System.out.println(hash.search(idBusca));
                     Filme filme = lerId(idBusca);
                     if (filme != null) {
                         System.out.println(filme);
@@ -160,7 +160,7 @@ class Programa {
             ba = filme.toByteArray();
             arq.writeInt(ba.length);
             arq.write(ba);
-            tree.insert(filme.getId(), filePointer);
+            hash.insert(filme.getId(), filePointer);
 
             // escrever filme sem alterar id cabeçalho (update)
         } else if (type == 1) {
@@ -169,7 +169,7 @@ class Programa {
             ba = filme.toByteArray();
             arq.writeInt(ba.length);
             arq.write(ba);
-            tree.update(filme.getId(), filePointer);
+            hash.update(filme.getId(), filePointer);
 
             // escrever filme incrementando e sem escrever o tamanho (usado para
             // sobrescrever um filme)
@@ -184,7 +184,7 @@ class Programa {
             ba = filme.toByteArray();
             arq.readInt();
             arq.write(ba);
-            tree.insert(filme.getId(), filePointer);
+            hash.insert(filme.getId(), filePointer);
 
             // escrever filme sem alterar id cabeçalho e marcando-o como apagado
         } else if (type == 3) {
@@ -201,7 +201,7 @@ class Programa {
             ba = filme.toByteArray();
             arq.readInt();
             arq.write(ba);
-            tree.update(filme.getId(), filePointer);
+            hash.update(filme.getId(), filePointer);
 
             // esvrever filme incrementando o id cabeçalho
         } else {
@@ -215,7 +215,7 @@ class Programa {
             ba = filme.toByteArray();
             arq.writeInt(ba.length);
             arq.write(ba);
-            tree.insert(filme.getId(), filePointer);
+            hash.insert(filme.getId(), filePointer);
         }
 
         pos = arq.getFilePointer();
@@ -270,7 +270,7 @@ class Programa {
                 ba = new byte[len];
                 arq.read(ba);
                 filme.fromByteArray(ba);
-                tree.insert(filme.getId(), currentPosition);
+                hash.insert(filme.getId(), currentPosition);
                 currentPosition = arq.getFilePointer();
             }
         }
@@ -302,11 +302,11 @@ class Programa {
         RandomAccessFile arq = new RandomAccessFile(dbPath,
                 "rw");
 
-        if (id > tree.getSize()) {
+        if (id > hash.getLastId()) {
             arq.close();
             return null;
         }
-        long cursor = tree.search(id);
+        long cursor = hash.search(id);
         if (cursor == -1) {
             arq.close();
             return null;
@@ -323,18 +323,18 @@ class Programa {
     }
 
     public static int filmeCount() {
-        return tree.getCount();
+        return hash.getCount();
     }
 
     public static boolean delete(int id) throws IOException {
         RandomAccessFile arq = new RandomAccessFile(dbPath,
                 "rw");
 
-        if (id > tree.getSize()) {
+        if (id > hash.getLastId()) {
             arq.close();
             return false;
         }
-        long cursor = tree.delete(id);
+        long cursor = hash.delete(id);
         if (cursor == -1) {
             arq.close();
             return false;
@@ -350,7 +350,7 @@ class Programa {
     public static boolean update(Filme novoFilme) throws IOException {
         RandomAccessFile arq = new RandomAccessFile(dbPath,
                 "rw");
-        if (novoFilme.getId() > tree.getSize()) {
+        if (novoFilme.getId() > hash.getLastId()) {
             arq.close();
             return false;
         }
@@ -360,7 +360,7 @@ class Programa {
         Boolean achou = false;
         Filme filme = new Filme();
 
-        long cursor = tree.search(novoFilme.getId());
+        long cursor = hash.search(novoFilme.getId());
         if (cursor == -1) {
             arq.close();
             return false;

@@ -1,9 +1,9 @@
-import java.util.ArrayList;
-
 public class HashTable {
     public int depth = 1;
     public Bucket[] array;
     private int arraySize;
+    private int lastId;
+    private int count;
 
     HashTable() {
         int size = (int) Math.pow(2, depth);
@@ -25,6 +25,8 @@ public class HashTable {
         }
         hash = hash(key);
         array[hash].insert(key, value);
+        lastId = key;
+        count++;
     }
 
     private void split(Bucket bucket, int hash) {
@@ -47,7 +49,10 @@ public class HashTable {
                 }
             }
         } else {
-            array[hash + arraySize] = new Bucket(bucketDepth);
+            if (hash < arraySize)
+                array[hash + arraySize] = new Bucket(bucketDepth);
+            else
+                array[hash] = new Bucket(bucketDepth);
             for (int i = 0; i < array[hash].getSize(); i++) {
                 int newHash = hash(bucket.node[i].getKey());
                 if (newHash != hash) {
@@ -65,5 +70,29 @@ public class HashTable {
         long result = array[hash].search(key);
 
         return result;
+    }
+
+    public boolean update(int key, long newValue) {
+        int hash = hash(key);
+        boolean result = array[hash].update(key, newValue);
+
+        return result;
+    }
+
+    public long delete(int key) {
+        int hash = hash(key);
+        long value = array[hash].remove(key);
+        if (value != -1) {
+            count--;
+        }
+        return value;
+    }
+
+    public int getLastId() {
+        return lastId;
+    }
+
+    public int getCount() {
+        return count;
     }
 }
