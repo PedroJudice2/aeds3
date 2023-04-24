@@ -99,7 +99,7 @@ class Programa {
                 System.out.println();
                 System.out.println("Deseja fazer alguma outra operação?");
                 choice = sc.nextLine();
-                choice.toLowerCase();
+                choice = choice.toLowerCase();
             } while (Pattern.matches("^(?:1|t(?:rue)?|y(?:es)?|ok(?:ay)?|s(?:im)?)$", choice));
 
         } catch (IOException e) {
@@ -158,6 +158,7 @@ class Programa {
             ba = filme.toByteArray();
             arq.writeInt(ba.length);
             arq.write(ba);
+
             // escrever filme sem alterar id cabeçalho
         } else if (type == 1) {
             arq.seek(pos);
@@ -165,6 +166,9 @@ class Programa {
             ba = filme.toByteArray();
             arq.writeInt(ba.length);
             arq.write(ba);
+
+            // escrever filme incrementando e sem escrever o tamanho (usado para
+            // sobrescrever um filme)
         } else if (type == 2) {
             arq.seek(0);
             int id = arq.readInt();
@@ -176,6 +180,7 @@ class Programa {
             ba = filme.toByteArray();
             arq.readInt();
             arq.write(ba);
+
             // escrever filme sem alterar id cabeçalho e marcando-o como apagado
         } else if (type == 3) {
             arq.seek(pos);
@@ -183,12 +188,16 @@ class Programa {
             ba = filme.toByteArray();
             arq.writeInt(ba.length);
             arq.write(ba);
+            // escrever filme sem alterar id cabeçalho e sem escrever o tamanho (usado para
+            // sobrescrever um filme)
         } else if (type == 4) {
             arq.seek(pos);
             arq.writeBoolean(false);
             ba = filme.toByteArray();
             arq.readInt();
             arq.write(ba);
+
+            // esvrever filme incrementando o id cabeçalho
         } else {
             arq.seek(0);
             int id = arq.readInt();
