@@ -1,5 +1,11 @@
 package DataStruct;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 
 /**
@@ -9,7 +15,7 @@ import java.util.ArrayList;
  * @since 2014-03-31
  * @author Pedro
  */
-public abstract class DataStruct {
+public abstract class DataStruct implements Serializable {
 
     private long lastId;
 
@@ -91,6 +97,20 @@ public abstract class DataStruct {
      */
     public void addToList(long value) {
         free.add(value);
+    }
+
+    public void serialize() throws IOException {
+        ObjectOutputStream objectOutput = new ObjectOutputStream(
+                new FileOutputStream("resources/dataStructure/Data.db"));
+        objectOutput.writeObject(this);
+        objectOutput.close();
+    }
+
+    public DataStruct deserialize() throws IOException, ClassNotFoundException {
+        ObjectInputStream objectInput = new ObjectInputStream(new FileInputStream("resources/dataStructure/Data.db"));
+        DataStruct dataStruct = (DataStruct) objectInput.readObject();
+        objectInput.close();
+        return dataStruct;
     }
 
 }

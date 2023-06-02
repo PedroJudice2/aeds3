@@ -2,6 +2,7 @@ package BPlusTree;
 
 import java.io.Serializable;
 import DataStruct.DataStruct;
+import ExtensibleHashing.HashTable;
 
 /**
  * The BPlusTree class represents a B+ tree data structure that stores key-value
@@ -34,7 +35,7 @@ import DataStruct.DataStruct;
  * @since 2023-02-24
  * @author Pedro
  */
-public class BPlusTree extends DataStruct implements Serializable {
+public class BPlusTree extends DataStruct {
 
     private Node root;
     private int order;
@@ -54,7 +55,7 @@ public class BPlusTree extends DataStruct implements Serializable {
     /**
      * {@inheritDoc}
      * insert a key-value pair into the tree.
-     * when
+     * 
      */
     @Override
     public void insert(long key, long value) {

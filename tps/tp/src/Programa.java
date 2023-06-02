@@ -15,8 +15,8 @@ import MyScanner.MyScanner;
 public class Programa {
 
     // COLOQUE O CAMINHO DA DO SEU CSV E DO SEU AQUIVO
-    public static String csvPath = "src/resources/csv/NetFlix.csv";
-    public static String dbPath = "src/resources/database/filmes.db";
+    public static String csvPath = "resources/csv/Pasta1.csv";
+    public static String dbPath = "resources/database/filmes.db";
 
     public static void main(String[] args) {
         String choice;
@@ -40,13 +40,11 @@ public class Programa {
                     alg = MyScanner.sc.nextInt();
                 } while (!(alg == 2 || alg == 1 || alg == 3));
                 MyScanner.sc.nextLine(); // clear buffer
+                System.out.println("Carregando...");
                 fileOp = new FileOp(dbPath, csvPath, alg);
-                System.out.println("Carregando...");
-                fileOp.loadFile();
             } else {
-                System.out.println("Carregando...");
                 fileOp = new FileOp(dbPath, csvPath);
-                fileOp.loadData();
+                System.out.println("Carregando...");
             }
             do {
                 System.out.print("\033[H\033[2J");
@@ -119,12 +117,13 @@ public class Programa {
                     System.out.println("Deseja fazer alguma outra operação?");
                     choice = MyScanner.sc.nextLine();
                     choice = choice.toLowerCase();
-                } while (!(Pattern.matches("^(?:0|n(?:o)?|n(?:ao)?|n(?:ão)?)$", choice)));
+                } while (!(Pattern.matches("^(?:0|n(?:o)?|n(?:ao)?|n(?:ão)?)$", choice) || Pattern
+                        .matches("^(?:1|t(?:rue)?|y(?:es)?|ok(?:ay)?|s(?:im)?)$", choice)));
             } while (Pattern.matches("^(?:1|t(?:rue)?|y(?:es)?|ok(?:ay)?|s(?:im)?)$", choice));
             System.out.println("Fechando...");
             fileOp.close();
 
-        } catch (IOException | ClassNotFoundException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
 

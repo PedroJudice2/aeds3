@@ -1,7 +1,5 @@
 package ExtensibleHashing;
 
-import java.io.Serializable;
-
 import DataStruct.DataStruct;
 
 /**
@@ -36,7 +34,7 @@ import DataStruct.DataStruct;
  * @since 2023-05-13
  * @author Pedro
  */
-public class HashTable extends DataStruct implements Serializable {
+public class HashTable extends DataStruct {
 
     public int depth = 1;
     public Bucket[] array;

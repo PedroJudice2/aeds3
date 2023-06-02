@@ -25,6 +25,7 @@ class Bucket implements Serializable {
     private int depth;
     private int Maxsize = 388;
     private int size = 0;
+    private static final long serialVersionUID = 1l;
 
     /**
      * Constructs an empty bucket with the given depth.

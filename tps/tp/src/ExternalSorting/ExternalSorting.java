@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.io.Serializable;
 import java.util.ArrayList;
 
 import DataStruct.DataStruct;
@@ -31,7 +30,7 @@ import Filme.Filme;
  * @author Pedro
  * 
  */
-public class ExternalSorting extends DataStruct implements Serializable {
+public class ExternalSorting extends DataStruct {
     long listSize = 0;
     String dbPath;
 

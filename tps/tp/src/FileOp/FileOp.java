@@ -3,18 +3,15 @@ package FileOp;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.RandomAccessFile;
 import java.util.Iterator;
 
 import BPlusTree.BPlusTree;
 import DataStruct.DataStruct;
+import Exeptions.DataNotFoudExemption;
 import ExtensibleHashing.HashTable;
 import ExternalSorting.ExternalSorting;
 import Filme.Filme;
@@ -49,7 +46,8 @@ public class FileOp {
         try {
             setFile(dbPath);
             setData(getAlgorithm(op));
-        } catch (FileNotFoundException e) {
+            loadFile();
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
@@ -67,8 +65,18 @@ public class FileOp {
         try {
             setFile(dbPath);
             setData(getAlgorithm());
+            loadData();
         } catch (IOException e) {
             e.printStackTrace();
+        } catch (DataNotFoudExemption e) {
+            System.out.println("carregando novo arquivo com algoritmo default");
+            algorithm = 2;
+            setData(new HashTable());
+            try {
+                loadFile();
+            } catch (IOException e1) {
+                e1.printStackTrace();
+            }
         }
     }
 
@@ -111,55 +119,21 @@ public class FileOp {
     }
 
     /**
-     * reads all the data from de db file
-     * 
-     * @throws IOException
-     */
-    public static void readAll() throws IOException {
-        arq.seek(16);
-        System.out.println("Numero de filmes: " + arq.readInt());
-        System.out.println();
-
-        long currentPosition = arq.getFilePointer();
-        long endPosition = arq.length();
-        int len;
-        byte[] ba;
-        Filme filme;
-        while (currentPosition < endPosition) {
-            arq.seek(arq.getFilePointer() + 1);
-            len = arq.readInt();
-            ba = new byte[len];
-            arq.read(ba);
-            filme = new Filme(ba);
-            System.out.println(filme);
-            System.out.println();
-            currentPosition = arq.getFilePointer();
-        }
-
-    }
-
-    /**
-     * get the number of movies in the db file
-     * 
-     * @return
-     * @throws IOException
-     */
-    public static int getIntCabecalho() throws IOException {
-        arq.seek(16);
-        int valor = arq.readInt();
-        return valor;
-    }
-
-    /**
      * get algorithm used in the db file
      * 
      * @return
+     * @throws DataNotFoudExemption
      * @throws IOException
      */
-    public DataStruct getAlgorithm() throws IOException {
-        arq.seek(4);
-        int op = arq.readInt();
-        return getAlgorithm(op);
+    public DataStruct getAlgorithm() throws DataNotFoudExemption {
+        try {
+            arq.seek(4);
+            int op = arq.readInt();
+            return getAlgorithm(op);
+        } catch (IOException e) {
+            System.err.println("Erro ao ler o arquivo");
+            throw new DataNotFoudExemption("Erro ao ler algoritimo no arquivo");
+        }
     }
 
     /**
@@ -185,7 +159,8 @@ public class FileOp {
      * 
      * @throws IOException
      */
-    public void loadFile() throws IOException {
+
+    private void loadFile() throws IOException {
         // open db file
         arq.setLength(0);
         // write innformation to the db file, read the README.md file to understand
@@ -212,6 +187,37 @@ public class FileOp {
         } catch (Exception ex) {
             System.out.println(ex.getMessage());
         }
+    }
+
+    /**
+     * load the data structure and the db file
+     * 
+     * @throws FileNotFoundException
+     * @throws IOException
+     * @throws ClassNotFoundException
+     */
+    public void loadData() throws DataNotFoudExemption {
+        try {
+            arq.seek(8);
+            long id = arq.readLong();
+            Filme.setCounter(id);
+            this.data = data.deserialize();
+        } catch (IOException | ClassNotFoundException e) {
+            System.err.println("Nenhuma estrutura de dados encontrada");
+            throw new DataNotFoudExemption("Nenhuma estrutura de dados encontrada");
+        }
+    }
+
+    /**
+     * get the number of movies in the db file
+     * 
+     * @return
+     * @throws IOException
+     */
+    public static int getIntCabecalho() throws IOException {
+        arq.seek(16);
+        int valor = arq.readInt();
+        return valor;
     }
 
     /**
@@ -328,6 +334,34 @@ public class FileOp {
     }
 
     /**
+     * reads all the data from de db file
+     * 
+     * @throws IOException
+     */
+    public static void readAll() throws IOException {
+        arq.seek(16);
+        System.out.println("Numero de filmes: " + arq.readInt());
+        System.out.println();
+
+        long currentPosition = arq.getFilePointer();
+        long endPosition = arq.length();
+        int len;
+        byte[] ba;
+        Filme filme;
+        while (currentPosition < endPosition) {
+            arq.seek(arq.getFilePointer() + 1);
+            len = arq.readInt();
+            ba = new byte[len];
+            arq.read(ba);
+            filme = new Filme(ba);
+            System.out.println(filme);
+            System.out.println();
+            currentPosition = arq.getFilePointer();
+        }
+
+    }
+
+    /**
      * read a movie from the db file by the movie id
      * 
      * @param id
@@ -359,28 +393,8 @@ public class FileOp {
      * @throws IOException
      */
     public void close() throws FileNotFoundException, IOException {
-        ObjectOutputStream objectOutput = new ObjectOutputStream(
-                new FileOutputStream("src/resources/dataStructure/Data.db"));
-        objectOutput.writeObject(data);
-        objectOutput.close();
+        data.serialize();
         arq.close();
-    }
-
-    /**
-     * load the data structure and the db file
-     * 
-     * @throws FileNotFoundException
-     * @throws IOException
-     * @throws ClassNotFoundException
-     */
-    public void loadData() throws FileNotFoundException, IOException, ClassNotFoundException {
-        arq.seek(8);
-        long id = arq.readLong();
-        Filme.setCounter(id);
-        ObjectInputStream objectInput = new ObjectInputStream(
-                new FileInputStream("src/resources/dataStructure/Data.db"));
-        this.data = (DataStruct) objectInput.readObject();
-        objectInput.close();
     }
 
     /**
