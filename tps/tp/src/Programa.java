@@ -1,7 +1,10 @@
 import java.io.IOException;
 import java.util.regex.Pattern;
+
+import DataStruct.PatternSearch;
 import FileOp.FileOp;
 import Filme.Filme;
+import KMP.KMP;
 import MyScanner.MyScanner;
 
 /**
@@ -54,6 +57,7 @@ public class Programa {
                 System.out.println("Atualizar op 3 ");
                 System.out.println("Adicionar op 4 ");
                 System.out.println("ler todos op 5");
+                System.out.println("Buscar padrão op 6");
                 System.out.println(FileOp.getIntCabecalho());
                 int op;
 
@@ -61,7 +65,7 @@ public class Programa {
                 do {
                     System.out.print("Digite a opção desejada: ");
                     op = MyScanner.sc.nextInt();
-                } while (op != 1 && op != 2 && op != 3 && op != 4 && op != 5);
+                } while (op != 1 && op != 2 && op != 3 && op != 4 && op != 5 && op != 6);
 
                 // Opção para exclusão
                 if (op == 1) {
@@ -111,6 +115,20 @@ public class Programa {
                 } else if (op == 5) {
                     FileOp.readAll();
                     MyScanner.sc.nextLine();
+                } else if (op == 6) {
+                    String alg2;
+                    do {
+                        alg2 = MyScanner.sc.nextLine();
+                        System.out.println("Digite o algoitimo desejado: ");
+                        System.out.println("KMP op 1 ");
+                    } while (!(alg2.equals("1")));
+                    PatternSearch patternSearch = null;
+                    if (alg2.equals("1")) {
+                        patternSearch = new KMP();
+                    }
+                    System.out.println("Digite o padrão desejado: ");
+                    String pattern = MyScanner.sc.nextLine();
+                    patternSearch.findPattern(pattern);
                 }
                 System.out.println();
                 do {
