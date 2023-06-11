@@ -1,9 +1,11 @@
 unnamed package
 BPlusTree
 DataStruct
+Exeptions
 ExtensibleHashing
 ExternalSorting
 FileOp
 Filme
 Huffman
+KMP
 MyScanner
