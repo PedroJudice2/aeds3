@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
 
-import DataStruct.PatternSearch;
 import FileOp.FileOp;
 
 /**
@@ -20,11 +19,11 @@ import FileOp.FileOp;
  * @since 2023-02-24
  * @author Pedro
  */
-public class KMP implements PatternSearch {
+public class KMP {
 
-    private int[] list;
-    private int numberOfPatterns = 0;
-    private byte[] bytePattern;
+    private static int[] list;
+    private static int numberOfPatterns = 0;
+    private static byte[] bytePattern;
 
     /**
      * Find the pattern in the file.
@@ -32,7 +31,7 @@ public class KMP implements PatternSearch {
      * @param pattern
      * @return
      */
-    public int findPattern(String pattern) {
+    public static int findPattern(String pattern) {
         bytePattern = pattern.getBytes(StandardCharsets.UTF_8);
         list = calculateLPS(bytePattern);
         try {
@@ -48,7 +47,7 @@ public class KMP implements PatternSearch {
      * 
      * @throws IOException
      */
-    private void searchText() throws IOException {
+    private static void searchText() throws IOException {
         RandomAccessFile arq = FileOp.arq;
         long i = 0; // index for txt[]
         int j = 0; // index for pat[]
@@ -95,7 +94,7 @@ public class KMP implements PatternSearch {
      * @param ba
      * @return
      */
-    private int[] calculateLPS(byte[] ba) {
+    private static int[] calculateLPS(byte[] ba) {
         int[] lps = new int[ba.length];
         int i = 1, j = 0;
         lps[0] = 0;

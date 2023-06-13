@@ -1,7 +1,6 @@
 import java.io.IOException;
 import java.util.regex.Pattern;
 
-import DataStruct.PatternSearch;
 import FileOp.FileOp;
 import Filme.Filme;
 import KMP.KMP;
@@ -117,18 +116,20 @@ public class Programa {
                     MyScanner.sc.nextLine();
                 } else if (op == 6) {
                     String alg2;
+                    MyScanner.sc.nextLine();
                     do {
-                        alg2 = MyScanner.sc.nextLine();
                         System.out.println("Digite o algoitimo desejado: ");
                         System.out.println("KMP op 1 ");
+                        alg2 = MyScanner.sc.nextLine();
                     } while (!(alg2.equals("1")));
-                    PatternSearch patternSearch = null;
-                    if (alg2.equals("1")) {
-                        patternSearch = new KMP();
-                    }
                     System.out.println("Digite o padrão desejado: ");
                     String pattern = MyScanner.sc.nextLine();
-                    patternSearch.findPattern(pattern);
+                    int numberOfOcorrences = 0;
+                    if (alg2.equals("1")) {
+                        numberOfOcorrences = KMP.findPattern(pattern);
+                    }
+                    System.out.println("Numero de ocorrencias do padrão:");
+                    System.out.println(numberOfOcorrences);
                 }
                 System.out.println();
                 do {
