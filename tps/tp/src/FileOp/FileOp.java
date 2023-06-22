@@ -10,6 +10,7 @@ import java.io.RandomAccessFile;
 import java.util.Iterator;
 
 import BPlusTree.BPlusTree;
+import Cryptography.Rsa;
 import DataStruct.DataStruct;
 import Exeptions.DataNotFoudExemption;
 import ExtensibleHashing.HashTable;
@@ -25,49 +26,47 @@ import Filme.Filme;
  */
 public class FileOp {
 
-    public DataStruct data;
+    private DataStruct data;
 
-    public static String csvPath;
-    public static String dbPath;
+    private static String csvPath;
+    private static String dbPath;
     public static RandomAccessFile arq;
     private int algorithm;
 
     /**
-     * Constructor for FileOp class that receives the path of the db file and the
-     * csv file and the algorithm to be used
+     * Constructor for FileOp class that receives the path of the encrypted db file
+     * and the csv file and the algorithm to be used
      * 
-     * @param dbPath
+     * @param encryptDbPath
      * @param csvPath
      * @param op
      */
-    public FileOp(String dbPath, String csvPath, int op) {
+    public FileOp(String encryptDbPath, String csvPath, int op) {
         setCsvPath(csvPath);
-        setDbPath(dbPath);
         try {
+            setDbPath(encryptDbPath);
             setFile(dbPath);
             setData(getAlgorithm(op));
             loadFile();
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     /**
-     * Constructor for FileOp class that receives the path of the db file and the
-     * csv file
+     * Constructor for FileOp class that receives the path of the encrypted db file
+     * and the csv file
      * 
-     * @param dbPath
+     * @param encryptDbPath
      * @param csvPath
      */
-    public FileOp(String dbPath, String csvPath) {
+    public FileOp(String encryptDbPath, String csvPath) {
         setCsvPath(csvPath);
-        setDbPath(dbPath);
         try {
+            setDbPath(encryptDbPath);
             setFile(dbPath);
             setData(getAlgorithm());
             loadData();
-        } catch (IOException e) {
-            e.printStackTrace();
         } catch (DataNotFoudExemption e) {
             System.out.println("carregando novo arquivo com algoritmo default");
             algorithm = 2;
@@ -77,6 +76,8 @@ public class FileOp {
             } catch (IOException e1) {
                 e1.printStackTrace();
             }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -90,12 +91,13 @@ public class FileOp {
     }
 
     /**
-     * setter for dbPath
+     * setter for dbPath, decrypt the encrypted file and set the dbPath to the
+     * unencrypted file
      * 
-     * @param dbPath
+     * @param encryptDbPath
      */
-    private void setDbPath(String dbPath) {
-        FileOp.dbPath = dbPath;
+    private void setDbPath(String encryptDbPath) throws Exception {
+        FileOp.dbPath = Rsa.decrypt(encryptDbPath);
     }
 
     /**
@@ -123,7 +125,6 @@ public class FileOp {
      * 
      * @return
      * @throws DataNotFoudExemption
-     * @throws IOException
      */
     public DataStruct getAlgorithm() throws DataNotFoudExemption {
         try {
@@ -143,6 +144,7 @@ public class FileOp {
      * @return
      */
     public DataStruct getAlgorithm(int op) {
+        algorithm = op;
         if (op == 1) {
             return new BPlusTree(8);
         } else if (op == 2) {
@@ -150,7 +152,6 @@ public class FileOp {
         } else if (op == 3) {
             return new ExternalSorting(dbPath);
         }
-        algorithm = op;
         return null;
     }
 
@@ -393,8 +394,13 @@ public class FileOp {
      * @throws IOException
      */
     public void close() throws FileNotFoundException, IOException {
-        data.serialize();
         arq.close();
+        data.serialize();
+        try {
+            Rsa.encrypt(dbPath);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     /**
